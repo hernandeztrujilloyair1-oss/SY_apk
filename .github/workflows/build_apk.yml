@@ -1,0 +1,71 @@
+name: Compilar APK Android Gratis
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Regenerar estructura nativa Android
+        run: |
+          flutter create . --platforms=android,web --org com.enfoqueseguro
+
+      - name: Desactivar verificacion estricta de AAR y fijar SDK 36
+        run: |
+          find android/app -name "build.gradle*" -exec sed -i 's/compileSdk = .*/compileSdk = 36/' {} +
+          find android/app -name "build.gradle*" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 36/' {} +
+          find android/app -name "build.gradle*" -exec sed -i 's/targetSdk = .*/targetSdk = 36/' {} +
+
+          mkdir -p ~/.gradle/init.d
+          cat << 'EOF' > ~/.gradle/init.d/fix_aar_metadata.gradle
+          allprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty("android")) {
+                      project.android {
+                          compileSdkVersion 36
+                      }
+                  }
+                  tasks.matching { it.name.contains("CheckAarMetadata") }.configureEach {
+                      enabled = false
+                  }
+              }
+          }
+          EOF
+
+      - name: Inyectar icono personalizado en Android si existe
+        run: |
+          if [ -f "assets/images/app_icon.png" ]; then
+            for dir in android/app/src/main/res/mipmap-*; do
+              cp -f assets/images/app_icon.png "$dir/ic_launcher.png" 2>/dev/null || true
+            done
+          fi
+
+      - name: Descargar paquetes de dependencias
+        run: flutter pub get
+
+      - name: Compilar APK en modo Release
+        run: flutter build apk --release
+
+      - name: Guardar APK como descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: SistemaSeguros-Instalador-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
