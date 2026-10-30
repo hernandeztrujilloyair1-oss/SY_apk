@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/poliza_model.dart';
 import '../services/api_service.dart';
@@ -18,152 +16,62 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _tabSeleccionada = 0; // 0: BASE, 1: COTIZADOR, 2: ALTAS-BAJAS
+  // Sección activa del menú lateral
+  String _seccionActiva = 'COBRANZA';
   List<PolizaModel> _polizas = [];
-  String _busqueda = '';
+  String _busquedaGlobal = '';
   final TextEditingController _searchCtrl = TextEditingController();
+
+  // Elementos del menú estilo AppSheet
+  final List> _menuItems = [
+    {'titulo': 'ASEGURADOS', 'icono': Icons.groups},
+    {'titulo': 'BUSCADOR', 'icono': Icons.person_search},
+    {'titulo': 'PÓLIZAS', 'icono': Icons.description},
+    {'titulo': 'COBRANZA', 'icono': Icons.payments},
+    {'titulo': 'SINIESTROS', 'icono': Icons.car_crash},
+    {'titulo': 'REPORTES', 'icono': Icons.bar_chart},
+    {'titulo': 'Flotillas e Incisos', 'icono': Icons.directions_car},
+    {'titulo': 'CRM Prospectos', 'icono': Icons.filter_alt},
+    {'titulo': 'TAREAS', 'icono': Icons.checklist},
+    {'titulo': 'About', 'icono': Icons.info_outline},
+    {'titulo': 'App Gallery', 'icono': Icons.apps},
+  ];
 
   @override
   void initState() {
     super.initState();
-    _cargar();
-    _revisarAlertaViernes();
+    _cargarDatos();
   }
 
-  void _revisarAlertaViernes() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ReglasNegocioService.debeAlertarViernesImpresion()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.print, color: Colors.amber),
-                SizedBox(width: 10),
-                Expanded(child: Text('Alerta de Viernes 4:00 PM: Revisar e imprimir pestañas físicas pendientes.')),
-              ],
-            ),
-            backgroundColor: Color(0xFF1E293B),
-            duration: Duration(seconds: 6),
-          ),
-        );
-      }
-    });
+  void _cargarDatos() async {
+    final list = await ApiService.obtenerPolizas();
+    if (mounted) setState(() => _polizas = list);
   }
 
-  void _cargar() async {
-    final res = await ApiService.obtenerPolizas();
-    if (mounted) setState(() => _polizas = res);
-  }
-
-  void _copiar(String txt, String tipo) {
-    Clipboard.setData(ClipboardData(text: txt));
+  void _copiarTexto(String texto, String campo) {
+    Clipboard.setData(ClipboardData(text: texto));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$tipo copiado: $txt'),
+        content: Text('$campo copiado: $texto'),
         duration: const Duration(seconds: 2),
         backgroundColor: const Color(0xFF1B365D),
       ),
     );
   }
 
-  void _procesarEnvio(PolizaModel item) {
-    final conf = EmpresaConfigService();
-    final atendioCtrl = TextEditingController(text: item.atendio.isNotEmpty ? item.atendio : conf.brokerTitular);
-    String medio = 'WhatsApp Directo';
-    bool llevaComparativa = false;
-
+  void _abrirModalNuevoRegistro() {
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDlgState) {
-          return AlertDialog(
-            backgroundColor: const Color(0xFF131F37),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            title: const Text('¿Qué medio usarás para contactar?', style: TextStyle(color: Colors.white, fontSize: 16)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: atendioCtrl,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: '¿Quién atiende?',
-                    labelStyle: const TextStyle(color: Colors.white54),
-                    filled: true,
-                    fillColor: const Color(0xFF0B1528),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: medio,
-                  dropdownColor: const Color(0xFF0F172A),
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: 'Medio de Comunicación',
-                    filled: true,
-                    fillColor: const Color(0xFF0B1528),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'WhatsApp Directo', child: Text('WhatsApp Directo')),
-                    DropdownMenuItem(value: 'WhatsApp Grupo', child: Text('WhatsApp Grupo')),
-                    DropdownMenuItem(value: 'Correo', child: Text('Correo Electrónico (con CC)')),
-                  ],
-                  onChanged: (v) => setDlgState(() => medio = v!),
-                ),
-                const SizedBox(height: 10),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('¿Lleva Comparativa?', style: TextStyle(color: Colors.white, fontSize: 13)),
-                  value: llevaComparativa,
-                  activeColor: Colors.cyanAccent,
-                  onChanged: (v) => setDlgState(() => llevaComparativa = v),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white60))),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  final msg = ReglasNegocioService.armarMensajeWhatsApp(
-                    cliente: item.titular,
-                    poliza: item.numeroPoliza,
-                    ramo: item.ramo,
-                    ejecutivoAtencion: atendioCtrl.text.trim(),
-                    esGrupo: medio == 'WhatsApp Grupo',
-                    llevaComparativa: llevaComparativa,
-                  );
-
-                  if (medio.contains('WhatsApp')) {
-                    final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
-                    if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    final correosCC = ReglasNegocioService.obtenerCorreosCC().join(',');
-                    final uri = Uri.parse('mailto:?cc=$correosCC&subject=${Uri.encodeComponent("Actualización de Póliza ${item.numeroPoliza} - ${conf.nombreDespacho}")}&body=${Uri.encodeComponent(msg)}');
-                    if (await canLaunchUrl(uri)) launchUrl(uri);
-                  }
-                },
-                child: const Text('Enviar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          );
-        },
-      ),
+      barrierDismissible: false,
+      builder: (ctx) => ModalCargaIa(onGuardado: _cargarDatos),
     );
   }
 
-  void _configurarEmpresa() {
+  void _procesarAtencionCliente(PolizaModel item) {
     final conf = EmpresaConfigService();
-    final nom = TextEditingController(text: conf.nombreDespacho);
-    final lema = TextEditingController(text: conf.lemaDespacho);
-    final broker = TextEditingController(text: conf.brokerTitular);
-    final contacto = TextEditingController(text: conf.correoContacto);
-    final cobranza = TextEditingController(text: conf.correoCobranza);
-    String? imgTemp = conf.logoBase64;
+    final atendioCtrl = TextEditingController(text: item.atendio.isNotEmpty ? item.atendio : conf.brokerTitular);
+    String medioSeleccionado = '2. WhatsApp Directo';
+    bool llevaComparativa = false;
 
     showDialog(
       context: context,
@@ -171,87 +79,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, setDlg) => AlertDialog(
           backgroundColor: const Color(0xFF131F37),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Row(
+          title: const Text('Registro de Atención CRM', style: TextStyle(color: Colors.white, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.palette, color: Colors.cyanAccent),
-              SizedBox(width: 8),
-              Text('Marca Blanca del Despacho', style: TextStyle(color: Colors.white, fontSize: 16)),
+              TextField(
+                controller: atendioCtrl,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: InputDecoration(
+                  labelText: '¿Quién atiende?',
+                  labelStyle: const TextStyle(color: Colors.white54),
+                  filled: true,
+                  fillColor: const Color(0xFF0B1528),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: medioSeleccionado,
+                dropdownColor: const Color(0xFF0F172A),
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                decoration: const InputDecoration(filled: true, fillColor: Color(0xFF0B1528)),
+                items: const [
+                  DropdownMenuItem(value: '1. Correo', child: Text('1. Correo Electrónico (con CC)')),
+                  DropdownMenuItem(value: '2. WhatsApp Directo', child: Text('2. WhatsApp Directo')),
+                  DropdownMenuItem(value: '3. WhatsApp Grupo', child: Text('3. WhatsApp Grupo')),
+                ],
+                onChanged: (v) => setDlg(() => medioSeleccionado = v!),
+              ),
+              const SizedBox(height: 10),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('¿Lleva Comparativa?', style: TextStyle(color: Colors.white, fontSize: 13)),
+                value: llevaComparativa,
+                activeColor: Colors.cyanAccent,
+                onChanged: (v) => setDlg(() => llevaComparativa = v),
+              ),
             ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: imgTemp != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(32),
-                          child: Image.memory(base64Decode(imgTemp!), width: 64, height: 64, fit: BoxFit.cover),
-                        )
-                      : const LogoEmpresaWidget(size: 64),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent),
-                  icon: const Icon(Icons.upload, size: 16),
-                  label: const Text('Subir Logo del Despacho (PNG/JPG)'),
-                  onPressed: () async {
-                    final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-                    if (r != null && r.files.single.bytes != null) {
-                      setDlg(() => imgTemp = base64Encode(r.files.single.bytes!));
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: nom,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Nombre Comercial del Despacho', filled: true, fillColor: Color(0xFF0B1528)),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: lema,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Lema o Giro', filled: true, fillColor: Color(0xFF0B1528)),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: broker,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Broker Director o Titular', filled: true, fillColor: Color(0xFF0B1528)),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: contacto,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Correo Dirección / Contacto CC', filled: true, fillColor: Color(0xFF0B1528)),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: cobranza,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Correo Cobranza CC', filled: true, fillColor: Color(0xFF0B1528)),
-                ),
-              ],
-            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white60))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
               onPressed: () async {
-                await conf.guardar(
-                  nuevoNombre: nom.text,
-                  nuevoLema: lema.text,
-                  nuevoBroker: broker.text,
-                  nuevoCorreoContacto: contacto.text,
-                  nuevoCorreoCobranza: cobranza.text,
-                  nuevoLogo: imgTemp,
-                );
-                setState(() {});
                 Navigator.pop(ctx);
+                final msg = ReglasNegocioService.armarMensajeWhatsApp(
+                  cliente: item.titular,
+                  poliza: item.numeroPoliza,
+                  ramo: item.ramo,
+                  ejecutivoAtencion: atendioCtrl.text.trim(),
+                  esGrupo: medioSeleccionado.contains('Grupo'),
+                  llevaComparativa: llevaComparativa,
+                );
+
+                if (medioSeleccionado.contains('WhatsApp')) {
+                  final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
+                  if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+                } else {
+                  final correosCC = ReglasNegocioService.obtenerCorreosCC().join(',');
+                  final uri = Uri.parse('mailto:?cc=$correosCC&subject=${Uri.encodeComponent("Gestión de Cobranza ${item.numeroPoliza} - ${conf.nombreDespacho}")}&body=${Uri.encodeComponent(msg)}');
+                  if (await canLaunchUrl(uri)) launchUrl(uri);
+                }
               },
-              child: const Text('Guardar y Aplicar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Enviar', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -262,198 +153,291 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final conf = EmpresaConfigService();
-    final filtradas = _polizas.where((p) {
-      final q = _busqueda.toLowerCase();
-      return p.numeroPoliza.toLowerCase().contains(q) ||
-          p.titular.toLowerCase().contains(q) ||
-          p.placas.toLowerCase().contains(q) ||
-          p.rfc.toLowerCase().contains(q);
-    }).toList();
+    final bool esPantallaAncha = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1120),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF131F37),
+        backgroundColor: const Color(0xFF0F2537),
         elevation: 1,
+        titleSpacing: 0,
         title: Row(
           children: [
-            GestureDetector(onTap: _configurarEmpresa, child: const LogoEmpresaWidget(size: 34)),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
+            const LogoEmpresaWidget(size: 32),
+            const SizedBox(width: 12),
+            Text(
+              conf.nombreDespacho.isNotEmpty && conf.nombreDespacho != 'Despacho de Seguros'
+                  ? conf.nombreDespacho
+                  : 'Sistema Cartera y Operaciones',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(width: 24),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(conf.nombreDespacho, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-                  Text(conf.lemaDespacho, style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                ],
+              child: Container(
+                height: 38,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                constraints: const BoxConstraints(maxWidth: 600),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Search $_seccionActiva',
+                    hintStyle: const TextStyle(color: Colors.white60, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white60, size: 18),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onChanged: (val) => setState(() => _busquedaGlobal = val),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.palette, color: Colors.cyanAccent, size: 20), tooltip: 'Marca Blanca', onPressed: _configurarEmpresa),
+          IconButton(
+            icon: const Icon(Icons.sync, color: Colors.white70, size: 20),
+            tooltip: 'Sincronizar',
+            onPressed: _cargarDatos,
+          ),
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
-              icon: const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
-              label: const Text('Llenar Póliza / IA', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-              onPressed: () => showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => ModalCargaIa(onGuardado: _cargar),
+            padding: const EdgeInsets.only(right: 16, left: 8),
+            child: CircleAvatar(
+              radius: 14,
+              backgroundColor: const Color(0xFF0284C7),
+              child: Text(
+                conf.brokerTitular.isNotEmpty ? conf.brokerTitular[0].toUpperCase() : 'H',
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
           )
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: const Color(0xFF131F37),
-        indicatorColor: const Color(0xFF0284C7),
-        selectedIndex: _tabSeleccionada,
-        onDestinationSelected: (idx) => setState(() => _tabSeleccionada = idx),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.table_chart, color: Colors.white70), label: 'BASE'),
-          NavigationDestination(icon: Icon(Icons.calculate, color: Colors.white70), label: 'COTIZADOR'),
-          NavigationDestination(icon: Icon(Icons.swap_horiz, color: Colors.white70), label: 'ALTAS-BAJAS'),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                _kpi('Activas', '${_polizas.length}', Icons.shield, Colors.blue),
-                const SizedBox(width: 8),
-                _kpi('Avisos Col B', '${_polizas.where((e) => e.avisoEstado != conf.brokerTitular).length}', Icons.notifications_active, Colors.orange),
-                const SizedBox(width: 8),
-                _kpi('Art. 492', '94% OK', Icons.verified_user, Colors.green),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(color: const Color(0xFF131F37), borderRadius: BorderRadius.circular(10)),
-              child: TextField(
-                controller: _searchCtrl,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: const InputDecoration(
-                  hintText: 'Buscar por titular, póliza, RFC o placas...',
-                  hintStyle: TextStyle(color: Colors.white54, fontSize: 12),
-                  prefixIcon: Icon(Icons.search, color: Colors.white54, size: 18),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      drawer: esPantallaAncha ? null : Drawer(child: _construirMenuLateral()),
+      body: Row(
+        children: [
+          if (esPantallaAncha)
+            SizedBox(
+              width: 240,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
                 ),
-                onChanged: (v) => setState(() => _busqueda = v),
+                child: _construirMenuLateral(),
               ),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: filtradas.isEmpty
-                  ? const Center(child: Text('Sin registros disponibles', style: TextStyle(color: Colors.white54)))
-                  : ListView.separated(
-                      itemCount: filtradas.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (ctx, i) {
-                        final item = filtradas[i];
-                        return Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF131F37),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF1E3A8A).withOpacity(0.4)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: item.avisoEstado == conf.brokerTitular ? Colors.purple.withOpacity(0.3) : Colors.amber.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text('Col B: ${item.avisoEstado}',
-                                        style: TextStyle(
-                                          color: item.avisoEstado == conf.brokerTitular ? Colors.purpleAccent : Colors.amberAccent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 11,
-                                        )),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(item.tipoPersona, style: const TextStyle(color: Colors.cyanAccent, fontSize: 10)),
-                                  ),
-                                  const Spacer(),
-                                  Text('\$ ${item.primaNeta.toStringAsFixed(2)} MXN',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(item.titular, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                              const SizedBox(height: 4),
-                              Text('${item.aseguradora} | ${item.ramo} | Póliza: ${item.numeroPoliza}',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                              Text('Vigencia: ${item.inicioVigencia} al ${item.finVigencia} | Placas: ${item.placas.isEmpty ? "N/A" : item.placas}',
-                                  style: const TextStyle(color: Colors.white54, fontSize: 11)),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Text('Atiende: ${item.atendio}', style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
-                                  const Spacer(),
-                                  IconButton(
-                                    icon: const Icon(Icons.copy, size: 16, color: Colors.white70),
-                                    tooltip: 'Copiar Póliza',
-                                    onPressed: () => _copiar(item.numeroPoliza, 'Póliza'),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.send, size: 16, color: Colors.greenAccent),
-                                    tooltip: 'Notificar WhatsApp/Correo',
-                                    onPressed: () => _procesarEnvio(item),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
+          Expanded(child: _construirContenidoCentral()),
+        ],
       ),
     );
   }
 
-  Widget _kpi(String titulo, String valor, IconData ico, Color c) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: const Color(0xFF131F37), borderRadius: BorderRadius.circular(8)),
-        child: Row(
-          children: [
-            CircleAvatar(radius: 14, backgroundColor: c.withOpacity(0.2), child: Icon(ico, size: 14, color: c)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+  Widget _construirMenuLateral() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: _menuItems.map((item) {
+        final String titulo = item['titulo'];
+        final IconData icono = item['icono'];
+        final bool seleccionada = _seccionActiva == titulo;
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: seleccionada ? const Color(0xFFE2E8F0) : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: ListTile(
+            dense: true,
+            leading: Icon(
+              icono,
+              size: 20,
+              color: seleccionada ? const Color(0xFF0F2537) : const Color(0xFF64748B),
+            ),
+            title: Text(
+              titulo,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
+                color: seleccionada ? const Color(0xFF0F2537) : const Color(0xFF334155),
+              ),
+            ),
+            onTap: () {
+              setState(() => _seccionActiva = titulo);
+              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+            },
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _construirContenidoCentral() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Barra de encabezado AppSheet
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+          ),
+          child: Row(
+            children: [
+              Text(
+                _seccionActiva,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F2537),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: _abrirModalNuevoRegistro,
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.filter_list, size: 20, color: Color(0xFF64748B)),
+                tooltip: 'Filtrar',
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: const Icon(Icons.check_box_outlined, size: 20, color: Color(0xFF64748B)),
+                tooltip: 'Selección múltiple',
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+        // Cuerpo con los datos según la sección
+        Expanded(child: _renderizarDatosSeccion()),
+      ],
+    );
+  }
+
+  Widget _renderizarDatosSeccion() {
+    final filtradas = _polizas.where((p) {
+      final q = _busquedaGlobal.toLowerCase();
+      return p.titular.toLowerCase().contains(q) ||
+          p.numeroPoliza.toLowerCase().contains(q) ||
+          p.placas.toLowerCase().contains(q) ||
+          p.aseguradora.toLowerCase().contains(q);
+    }).toList();
+
+    if (filtradas.isEmpty) {
+      return const Center(
+        child: Text(
+          'No items',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtradas.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (ctx, i) {
+        final item = filtradas[i];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text(titulo, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                  Text(valor, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Col B: ${item.avisoEstado}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF334155)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item.tipoPersona,
+                      style: const TextStyle(color: Color(0xFF0369A1), fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '\$ ${item.primaNeta.toStringAsFixed(2)} MXN',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                  ),
                 ],
               ),
-            )
-          ],
-        ),
-      ),
+              const SizedBox(height: 8),
+              Text(
+                item.titular,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${item.aseguradora} | ${item.ramo} | Póliza: ${item.numeroPoliza}',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              ),
+              Text(
+                'Placas: ${item.placas.isEmpty ? "N/A" : item.placas} | Serie: ${item.serie.isEmpty ? "N/A" : item.serie} | Vigencia: ${item.inicioVigencia} al ${item.finVigencia}',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Text('Atiende: ${item.atendio}', style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16, color: Color(0xFF64748B)),
+                    tooltip: 'Copiar Póliza',
+                    onPressed: () => _copiarTexto(item.numeroPoliza, 'Póliza'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send, size: 16, color: Colors.green),
+                    tooltip: 'Atención WhatsApp / Correo',
+                    onPressed: () => _procesarAtencionCliente(item),
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 }
