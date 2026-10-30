@@ -1,18 +1,23 @@
-name: Compilar APK Android Gratis
+name: Compilar APK y Web Navegador
 
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar codigo del repositorio
+      - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Java JDK
+      - name: Configurar Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -24,18 +29,18 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Regenerar estructura nativa Android
+      - name: Regenerar estructura nativa Android y Web
         run: |
-          flutter create . --project-name sy_soluciones --platforms=android,web --org com.enfoqueseguro
+          flutter create . --project-name sy_soluciones --platforms=android,web --org com.seguros.app
 
-      - name: Desactivar verificacion estricta de AAR y fijar SDK 36
+      - name: Desactivar verificacion estricta AAR y fijar SDK 36
         run: |
           find android/app -name "build.gradle*" -exec sed -i 's/compileSdk = .*/compileSdk = 36/' {} +
           find android/app -name "build.gradle*" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 36/' {} +
           find android/app -name "build.gradle*" -exec sed -i 's/targetSdk = .*/targetSdk = 36/' {} +
 
           mkdir -p ~/.gradle/init.d
-          cat << 'EOF' > ~/.gradle/init.d/fix_aar_metadata.gradle
+          cat << 'EOF' > ~/.gradle/init.d/fix_aar.gradle
           allprojects {
               afterEvaluate { project ->
                   if (project.hasProperty("android")) {
@@ -50,7 +55,7 @@ jobs:
           }
           EOF
 
-      - name: Inyectar icono personalizado en Android si existe
+      - name: Inyectar icono personalizado Android si existe
         run: |
           if [ -f "assets/images/app_icon.png" ]; then
             for dir in android/app/src/main/res/mipmap-*; do
@@ -58,14 +63,23 @@ jobs:
             done
           fi
 
-      - name: Descargar paquetes de dependencias
+      - name: Descargar dependencias
         run: flutter pub get
 
-      - name: Compilar APK en modo Release
+      - name: Compilar APK Android
         run: flutter build apk --release
+
+      - name: Compilar Version Web para Navegador
+        run: flutter build web --release --base-href /${{ github.event.repository.name }}/
 
       - name: Guardar APK como descargable
         uses: actions/upload-artifact@v4
         with:
           name: SistemaSeguros-Instalador-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Desplegar automaticamente en GitHub Pages (Web Navegador)
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages
