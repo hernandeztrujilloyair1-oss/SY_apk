@@ -26,7 +26,7 @@ jobs:
 
       - name: Regenerar estructura nativa Android
         run: |
-          flutter create . --platforms=android,web --org com.enfoqueseguro
+          flutter create . --project-name sy_soluciones --platforms=android,web --org com.enfoqueseguro
 
       - name: Desactivar verificacion estricta de AAR y fijar SDK 36
         run: |
