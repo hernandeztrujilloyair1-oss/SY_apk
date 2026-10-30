@@ -17,7 +17,7 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Java
+      - name: Configurar Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -31,7 +31,19 @@ jobs:
 
       - name: Regenerar estructura nativa Android y Web
         run: |
-          flutter create . --project-name sy_soluciones --platforms=android,web --org com.enfoqueseguro
+          # 1. Respaldar lib si existe para evitar que flutter create la sobreescriba
+          if [ -d "lib" ]; then
+            cp -r lib lib_backup
+          fi
+
+          # 2. Generar carpetas nativas
+          flutter create . --project-name sy_soluciones --platforms=android,web --org com.seguros.app
+
+          # 3. Restaurar tu codigo original intacto
+          if [ -d "lib_backup" ]; then
+            cp -r lib_backup/* lib/
+            rm -rf lib_backup
+          fi
 
       - name: Desactivar verificacion estricta AAR y fijar SDK 36
         run: |
@@ -58,15 +70,23 @@ jobs:
       - name: Inyectar icono personalizado Android
         run: |
           if [ -f "assets/images/app_icon.png" ]; then
+            echo "Icono encontrado en assets/images/app_icon.png. Aplicando reemplazo..."
+            rm -rf android/app/src/main/res/mipmap-anydpi-v26
             for dir in android/app/src/main/res/mipmap-*; do
-              cp -f assets/images/app_icon.png "$dir/ic_launcher.png" 2>/dev/null || true
+              if [ -d "$dir" ]; then
+                cp -f assets/images/app_icon.png "$dir/ic_launcher.png"
+                cp -f assets/images/app_icon.png "$dir/ic_launcher_round.png" 2>/dev/null || true
+              fi
             done
+            echo "Icono inyectado en todas las resoluciones."
+          else
+            echo "AVISO: No se encontro assets/images/app_icon.png"
           fi
 
       - name: Descargar dependencias
         run: flutter pub get
 
-      - name: Compilar APK Android
+      - name: Compilar APK Android Release
         run: flutter build apk --release
 
       - name: Compilar Version Web para Navegador
@@ -78,7 +98,7 @@ jobs:
           name: SistemaSeguros-Instalador-APK
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Desplegar automaticamente en GitHub Pages (Web Navegador)
+      - name: Desplegar automaticamente en GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build/web
