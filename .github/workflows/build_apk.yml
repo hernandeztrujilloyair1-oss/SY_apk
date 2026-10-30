@@ -31,7 +31,7 @@ jobs:
 
       - name: Regenerar estructura nativa Android y Web
         run: |
-          flutter create . --project-name sy_soluciones --platforms=android,web --org com.seguros.app
+          flutter create . --project-name sy_soluciones --platforms=android,web --org com.enfoqueseguro
 
       - name: Desactivar verificacion estricta AAR y fijar SDK 36
         run: |
@@ -55,7 +55,7 @@ jobs:
           }
           EOF
 
-      - name: Inyectar icono personalizado Android si existe
+      - name: Inyectar icono personalizado Android
         run: |
           if [ -f "assets/images/app_icon.png" ]; then
             for dir in android/app/src/main/res/mipmap-*; do
