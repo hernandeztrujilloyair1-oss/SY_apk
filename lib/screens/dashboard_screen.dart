@@ -39,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Icon(Icons.print, color: Colors.amber),
                 SizedBox(width: 10),
-                Expanded(child: Text('Alerta de Viernes 4:00 PM: Recuerda imprimir las pestañas físicas pendientes.')),
+                Expanded(child: Text('Alerta de Viernes 4:00 PM: Revisar e imprimir pestañas físicas pendientes.')),
               ],
             ),
             backgroundColor: Color(0xFF1E293B),
@@ -58,12 +58,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _copiar(String txt, String tipo) {
     Clipboard.setData(ClipboardData(text: txt));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('\$tipo copiado: \$txt'), duration: const Duration(seconds: 2), backgroundColor: const Color(0xFF1B365D)),
+      SnackBar(
+        content: Text('$tipo copiado: $txt'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF1B365D),
+      ),
     );
   }
 
   void _procesarEnvio(PolizaModel item) {
-    final atendioCtrl = TextEditingController(text: item.atendio.isNotEmpty ? item.atendio : 'Yair Hernández');
+    final conf = EmpresaConfigService();
+    final atendioCtrl = TextEditingController(text: item.atendio.isNotEmpty ? item.atendio : conf.brokerTitular);
     String medio = 'WhatsApp Directo';
     bool llevaComparativa = false;
 
@@ -128,17 +133,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     cliente: item.titular,
                     poliza: item.numeroPoliza,
                     ramo: item.ramo,
-                    atendio: atendioCtrl.text.trim(),
+                    ejecutivoAtencion: atendioCtrl.text.trim(),
                     esGrupo: medio == 'WhatsApp Grupo',
                     llevaComparativa: llevaComparativa,
                   );
 
                   if (medio.contains('WhatsApp')) {
-                    final uri = Uri.parse('https://wa.me/?text=\${Uri.encodeComponent(msg)}');
+                    final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}');
                     if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
                   } else {
-                    final cc = ReglasNegocioService.correosCC.join(',');
-                    final uri = Uri.parse('mailto:?cc=\$cc&subject=\${Uri.encodeComponent("Aviso de Póliza \${item.numeroPoliza}")}&body=\${Uri.encodeComponent(msg)}');
+                    final correosCC = ReglasNegocioService.obtenerCorreosCC().join(',');
+                    final uri = Uri.parse('mailto:?cc=$correosCC&subject=${Uri.encodeComponent("Actualización de Póliza ${item.numeroPoliza} - ${conf.nombreDespacho}")}&body=${Uri.encodeComponent(msg)}');
                     if (await canLaunchUrl(uri)) launchUrl(uri);
                   }
                 },
@@ -153,9 +158,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _configurarEmpresa() {
     final conf = EmpresaConfigService();
-    final nom = TextEditingController(text: conf.nombreEmpresa);
-    final lema = TextEditingController(text: conf.lemaEmpresa);
-    final broker = TextEditingController(text: conf.brokerDirector);
+    final nom = TextEditingController(text: conf.nombreDespacho);
+    final lema = TextEditingController(text: conf.lemaDespacho);
+    final broker = TextEditingController(text: conf.brokerTitular);
+    final contacto = TextEditingController(text: conf.correoContacto);
+    final cobranza = TextEditingController(text: conf.correoCobranza);
     String? imgTemp = conf.logoBase64;
 
     showDialog(
@@ -164,16 +171,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, setDlg) => AlertDialog(
           backgroundColor: const Color(0xFF131F37),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Text('Personalizar Marca (Marca Blanca)', style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: const Row(
+            children: [
+              Icon(Icons.palette, color: Colors.cyanAccent),
+              SizedBox(width: 8),
+              Text('Marca Blanca del Despacho', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Center(child: LogoEmpresaWidget(size: 60)),
+                Center(
+                  child: imgTemp != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Image.memory(base64Decode(imgTemp!), width: 64, height: 64, fit: BoxFit.cover),
+                        )
+                      : const LogoEmpresaWidget(size: 64),
+                ),
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent),
                   icon: const Icon(Icons.upload, size: 16),
-                  label: const Text('Cargar Logo PNG'),
+                  label: const Text('Subir Logo del Despacho (PNG/JPG)'),
                   onPressed: () async {
                     final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
                     if (r != null && r.files.single.bytes != null) {
@@ -185,32 +206,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 TextField(
                   controller: nom,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Nombre Empresa / Broker', filled: true, fillColor: Color(0xFF0B1528)),
+                  decoration: const InputDecoration(labelText: 'Nombre Comercial del Despacho', filled: true, fillColor: Color(0xFF0B1528)),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: lema,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Lema Comercial', filled: true, fillColor: Color(0xFF0B1528)),
+                  decoration: const InputDecoration(labelText: 'Lema o Giro', filled: true, fillColor: Color(0xFF0B1528)),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: broker,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: const InputDecoration(labelText: 'Broker Director (Ej. Raúl Martínez)', filled: true, fillColor: Color(0xFF0B1528)),
+                  decoration: const InputDecoration(labelText: 'Broker Director o Titular', filled: true, fillColor: Color(0xFF0B1528)),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: contacto,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(labelText: 'Correo Dirección / Contacto CC', filled: true, fillColor: Color(0xFF0B1528)),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: cobranza,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: const InputDecoration(labelText: 'Correo Cobranza CC', filled: true, fillColor: Color(0xFF0B1528)),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white60))),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
               onPressed: () async {
-                await conf.guardar(nuevoNombre: nom.text.trim(), nuevoLema: lema.text.trim(), nuevoBroker: broker.text.trim(), nuevoLogo: imgTemp);
+                await conf.guardar(
+                  nuevoNombre: nom.text,
+                  nuevoLema: lema.text,
+                  nuevoBroker: broker.text,
+                  nuevoCorreoContacto: contacto.text,
+                  nuevoCorreoCobranza: cobranza.text,
+                  nuevoLogo: imgTemp,
+                );
                 setState(() {});
                 Navigator.pop(ctx);
               },
-              child: const Text('Guardar'),
+              child: const Text('Guardar y Aplicar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -243,21 +284,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(conf.nombreEmpresa, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-                  Text(conf.lemaEmpresa, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                  Text(conf.nombreDespacho, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                  Text(conf.lemaDespacho, style: const TextStyle(color: Colors.white54, fontSize: 10)),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.settings, color: Colors.white70, size: 20), onPressed: _configurarEmpresa),
+          IconButton(icon: const Icon(Icons.palette, color: Colors.cyanAccent, size: 20), tooltip: 'Marca Blanca', onPressed: _configurarEmpresa),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
               icon: const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
-              label: const Text('Llenar Cotizador / IA', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              label: const Text('Llenar Póliza / IA', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               onPressed: () => showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -282,12 +323,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // KPIs AppSheet Style
             Row(
               children: [
-                _kpi('Activas', '\${_polizas.length}', Icons.shield, Colors.blue),
+                _kpi('Activas', '${_polizas.length}', Icons.shield, Colors.blue),
                 const SizedBox(width: 8),
-                _kpi('Avisos Pendientes', '\${_polizas.where((e) => e.avisoEstado != "SR RAUL").length}', Icons.notifications_active, Colors.orange),
+                _kpi('Avisos Col B', '${_polizas.where((e) => e.avisoEstado != conf.brokerTitular).length}', Icons.notifications_active, Colors.orange),
                 const SizedBox(width: 8),
                 _kpi('Art. 492', '94% OK', Icons.verified_user, Colors.green),
               ],
@@ -332,12 +372,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: item.avisoEstado == 'SR RAUL' ? Colors.purple.withOpacity(0.3) : Colors.amber.withOpacity(0.2),
+                                      color: item.avisoEstado == conf.brokerTitular ? Colors.purple.withOpacity(0.3) : Colors.amber.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: Text('Col B: \${item.avisoEstado}',
+                                    child: Text('Col B: ${item.avisoEstado}',
                                         style: TextStyle(
-                                          color: item.avisoEstado == 'SR RAUL' ? Colors.purpleAccent : Colors.amberAccent,
+                                          color: item.avisoEstado == conf.brokerTitular ? Colors.purpleAccent : Colors.amberAccent,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 11,
                                         )),
@@ -352,21 +392,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     child: Text(item.tipoPersona, style: const TextStyle(color: Colors.cyanAccent, fontSize: 10)),
                                   ),
                                   const Spacer(),
-                                  Text('\$ \${item.primaNeta.toStringAsFixed(2)} MXN',
+                                  Text('\$ ${item.primaNeta.toStringAsFixed(2)} MXN',
                                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Text(item.titular, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                               const SizedBox(height: 4),
-                              Text('\${item.aseguradora} | \${item.ramo} | Póliza: \${item.numeroPoliza}',
+                              Text('${item.aseguradora} | ${item.ramo} | Póliza: ${item.numeroPoliza}',
                                   style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                              Text('Vigencia: \${item.inicioVigencia} al \${item.finVigencia} | Placas: \${item.placas.isEmpty ? "N/A" : item.placas}',
+                              Text('Vigencia: ${item.inicioVigencia} al ${item.finVigencia} | Placas: ${item.placas.isEmpty ? "N/A" : item.placas}',
                                   style: const TextStyle(color: Colors.white54, fontSize: 11)),
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Text('Atiende: \${item.atendio}', style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                                  Text('Atiende: ${item.atendio}', style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
                                   const Spacer(),
                                   IconButton(
                                     icon: const Icon(Icons.copy, size: 16, color: Colors.white70),
