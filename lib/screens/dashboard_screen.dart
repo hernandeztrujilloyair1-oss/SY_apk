@@ -8,6 +8,13 @@ import '../services/reglas_negocio_service.dart';
 import '../widgets/logo_empresa_widget.dart';
 import 'modal_carga_ia.dart';
 
+class MenuItemModel {
+  final String titulo;
+  final IconData icono;
+
+  const MenuItemModel({required this.titulo, required this.icono});
+}
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -16,25 +23,23 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Sección activa del menú lateral
   String _seccionActiva = 'COBRANZA';
   List<PolizaModel> _polizas = [];
   String _busquedaGlobal = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
-  // Elementos del menú estilo AppSheet
-  final List> _menuItems = [
-    {'titulo': 'ASEGURADOS', 'icono': Icons.groups},
-    {'titulo': 'BUSCADOR', 'icono': Icons.person_search},
-    {'titulo': 'PÓLIZAS', 'icono': Icons.description},
-    {'titulo': 'COBRANZA', 'icono': Icons.payments},
-    {'titulo': 'SINIESTROS', 'icono': Icons.car_crash},
-    {'titulo': 'REPORTES', 'icono': Icons.bar_chart},
-    {'titulo': 'Flotillas e Incisos', 'icono': Icons.directions_car},
-    {'titulo': 'CRM Prospectos', 'icono': Icons.filter_alt},
-    {'titulo': 'TAREAS', 'icono': Icons.checklist},
-    {'titulo': 'About', 'icono': Icons.info_outline},
-    {'titulo': 'App Gallery', 'icono': Icons.apps},
+  final List<MenuItemModel> _menuItems = const [
+    MenuItemModel(titulo: 'ASEGURADOS', icono: Icons.groups),
+    MenuItemModel(titulo: 'BUSCADOR', icono: Icons.person_search),
+    MenuItemModel(titulo: 'PÓLIZAS', icono: Icons.description),
+    MenuItemModel(titulo: 'COBRANZA', icono: Icons.payments),
+    MenuItemModel(titulo: 'SINIESTROS', icono: Icons.car_crash),
+    MenuItemModel(titulo: 'REPORTES', icono: Icons.bar_chart),
+    MenuItemModel(titulo: 'Flotillas e Incisos', icono: Icons.directions_car),
+    MenuItemModel(titulo: 'CRM Prospectos', icono: Icons.filter_alt),
+    MenuItemModel(titulo: 'TAREAS', icono: Icons.checklist),
+    MenuItemModel(titulo: 'About', icono: Icons.info_outline),
+    MenuItemModel(titulo: 'App Gallery', icono: Icons.apps),
   ];
 
   @override
@@ -87,12 +92,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               TextField(
                 controller: atendioCtrl,
                 style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: '¿Quién atiende?',
-                  labelStyle: const TextStyle(color: Colors.white54),
+                  labelStyle: TextStyle(color: Colors.white54),
                   filled: true,
-                  fillColor: const Color(0xFF0B1528),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  fillColor: Color(0xFF0B1528),
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -242,9 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 8),
       children: _menuItems.map((item) {
-        final String titulo = item['titulo'];
-        final IconData icono = item['icono'];
-        final bool seleccionada = _seccionActiva == titulo;
+        final bool seleccionada = _seccionActiva == item.titulo;
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -255,12 +258,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: ListTile(
             dense: true,
             leading: Icon(
-              icono,
+              item.icono,
               size: 20,
               color: seleccionada ? const Color(0xFF0F2537) : const Color(0xFF64748B),
             ),
             title: Text(
-              titulo,
+              item.titulo,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
@@ -268,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             onTap: () {
-              setState(() => _seccionActiva = titulo);
+              setState(() => _seccionActiva = item.titulo);
               if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
             },
           ),
@@ -281,7 +284,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Barra de encabezado AppSheet
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: const BoxDecoration(
@@ -324,7 +326,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
-        // Cuerpo con los datos según la sección
         Expanded(child: _renderizarDatosSeccion()),
       ],
     );
