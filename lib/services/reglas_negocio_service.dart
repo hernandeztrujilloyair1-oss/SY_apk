@@ -1,63 +1,110 @@
-import '../services/empresa_config_service.dart';
-
 class ReglasNegocioService {
-  static List<String> obtenerCorreosCC() {
-    final conf = EmpresaConfigService();
-    final List<String> lista = [];
-    if (conf.correoContacto.isNotEmpty) lista.add(conf.correoContacto);
-    if (conf.correoCobranza.isNotEmpty && conf.correoCobranza != conf.correoContacto) {
-      lista.add(conf.correoCobranza);
-    }
-    return lista;
-  }
-
-  static String traducirRubroInteligente(String ramoOriginal) {
-    final r = ramoOriginal.toLowerCase().trim();
-    if (r.contains('auto') || r.contains('vehic') || r.contains('camion') || r.contains('flot')) {
-      return 'Seguro de Autos';
-    } else if (r.contains('gmm') || r.contains('medico') || r.contains('salud') || r.contains('gastos')) {
-      return 'Protección para Gastos Médicos Mayores';
-    } else if (r.contains('vida')) {
-      return 'Seguro de Vida';
-    } else if (r.contains('daño') || r.contains('hogar') || r.contains('empresa') || r.contains('inmueble')) {
-      return 'Protección para Bienes y Daños';
-    }
-    return 'Seguro de $ramoOriginal';
-  }
-
-  static bool esPersonaMoral({String? titulo, required String rfc}) {
-    if (titulo == null || titulo.trim().isEmpty) return true;
-    final rfcLimpio = rfc.replaceAll(' ', '').replaceAll('-', '').trim();
-    return rfcLimpio.length == 12;
-  }
-
+  /// Genera el texto del mensaje para WhatsApp según el medio, el tipo de aviso y los datos del cliente/póliza.
   static String armarMensajeWhatsApp({
     required String cliente,
-    required String poliza,
     required String ramo,
-    required String ejecutivoAtencion,
-    required bool esGrupo,
-    required bool llevaComparativa,
+    String? folio,
+    String? avisoTipo, // '1°', '2°', '3°', 'SR RAUL', etc.
+    String? nuevoCorreo,
+    String? ejecutivo,
+    bool esGrupo = false,
+    bool llevaComparativa = false,
   }) {
-    final conf = EmpresaConfigService();
-    final rubroTraduccion = traducirRubroInteligente(ramo);
+    final buffer = StringBuffer();
 
-    String intro = esGrupo
-        ? 'Estimados miembros del grupo, compartimos actualización referente al $rubroTraduccion de $cliente (Póliza: $poliza).'
-        : 'Hola $cliente, le contacta $ejecutivoAtencion de ${conf.nombreDespacho}, por parte de su broker titular ${conf.brokerTitular}.';
+    // 1. Saludo y presentación
+    final nombreAtendio = (ejecutivo != null && ejecutivo.isNotEmpty)
+        ? ejecutivo
+        : 'Yair Hernández';
 
-    String cuerpo = '\n\nLe informamos sobre el estatus de su $rubroTraduccion con número de póliza: *$poliza*.';
+    if (!esGrupo) {
+      buffer.writeln(
+        'Hola $cliente, soy $nombreAtendio de Enfoque Seguro, le hablo por parte de su broker Raúl Martínez.',
+      );
+    } else {
+      buffer.writeln('Estimado(a) $cliente:');
+    }
+    buffer.writeln();
 
-    if (llevaComparativa) {
-      cuerpo += '\n\nAdjuntamos la tabla comparativa con las cotizaciones cotejadas para su renovación.';
+    // 2. Traductor inteligente de ramo
+    final ramoAjustado = _ajustarTextoRamo(ramo);
+
+    // 3. Redacción según el tipo de aviso o gestión
+    switch (avisoTipo) {
+      case '1°':
+        buffer.writeln(
+          'Nos ponemos en contacto para darle seguimiento a su $ramoAjustado.',
+        );
+        break;
+      case '2°':
+        buffer.writeln(
+          'Le enviamos un recordatorio sobre el estado de su $ramoAjustado.',
+        );
+        break;
+      case '3°':
+        buffer.writeln(
+          'Le hacemos una última llamada de atención referente a su $ramoAjustado para evitar cualquier inconveniente con su cobertura.',
+        );
+        break;
+      case 'SR RAUL':
+        buffer.writeln(
+          'Por indicación directa del Sr. Raúl Martínez, le compartimos la actualización sobre su $ramoAjustado.',
+        );
+        break;
+      default:
+        buffer.writeln(
+          'Le compartimos la información correspondiente a su $ramoAjustado.',
+        );
     }
 
-    String pie = '\n\nLe atiende: *$ejecutivoAtencion*\n*${conf.nombreDespacho}*';
-    return '$intro$cuerpo$pie';
+    // 4. Inclusión de folio o referencia
+    if (folio != null && folio.isNotEmpty) {
+      buffer.writeln('Referencia / Folio: $folio');
+    }
+
+    // 5. Inclusión de nuevo correo si fue registrado
+    if (nuevoCorreo != null && nuevoCorreo.isNotEmpty) {
+      buffer.writeln('Correo de contacto registrado: $nuevoCorreo');
+    }
+
+    // 6. Mensaje de comparativa si aplica
+    if (llevaComparativa) {
+      buffer.writeln(
+        'Anexamos la comparativa de opciones disponibles para su revisión.',
+      );
+    }
+
+    buffer.writeln();
+    buffer.write(
+      'Quedamos a sus órdenes ante cualquier duda o aclaración. ¡Que tenga un excelente día!',
+    );
+
+    return buffer.toString();
   }
 
-  static bool debeAlertarViernesImpresion() {
-    final now = DateTime.now();
-    return now.weekday == DateTime.friday && now.hour >= 16;
+  /// Ajusta la redacción del ramo para anteceder "Seguro de..." o "Protección para..."
+  static String _ajustarTextoRamo(String ramoOriginal) {
+    final limpio = ramoOriginal.trim();
+    final lower = limpio.toLowerCase();
+
+    if (lower.startsWith('seguro de') || lower.startsWith('protección para')) {
+      return limpio;
+    }
+
+    if (lower.contains('auto') ||
+        lower.contains('camion') ||
+        lower.contains('moto') ||
+        lower.contains('vehiculo')) {
+      return 'Seguro de $limpio';
+    }
+
+    if (lower.contains('gmm') ||
+        lower.contains('gastos medicos') ||
+        lower.contains('salud') ||
+        lower.contains('vida')) {
+      return 'Protección para $limpio';
+    }
+
+    return 'Seguro de $limpio';
   }
 }
