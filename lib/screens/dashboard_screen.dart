@@ -221,7 +221,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: medioSeleccionado,
+                initialValue: medioSeleccionado,
                 dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white, fontSize: 13),
                 decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B)),
@@ -237,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('¿Lleva Comparativa?', style: TextStyle(color: Colors.white, fontSize: 13)),
                 value: llevaComparativa,
-                activeColor: const Color(0xFFD4AF37),
+                activeThumbColor: const Color(0xFFD4AF37),
                 onChanged: (v) => setDlg(() => llevaComparativa = v),
               ),
             ],
@@ -333,9 +333,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 constraints: const BoxConstraints(maxWidth: 620),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
                 child: TextField(
                   controller: _searchCtrl,
@@ -531,7 +531,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 3)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 3)),
             ],
           ),
           child: Column(
@@ -546,8 +546,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: esPagado
-                            ? const Color(0xFF059669).withOpacity(0.3)
-                            : const Color(0xFFD97706).withOpacity(0.3),
+                            ? const Color(0xFF059669).withValues(alpha: 0.3)
+                            : const Color(0xFFD97706).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(
