@@ -4,38 +4,41 @@ import '../services/empresa_config_service.dart';
 
 class LogoEmpresaWidget extends StatelessWidget {
   final double size;
-  final bool circular;
 
-  const LogoEmpresaWidget({
-    super.key,
-    this.size = 38,
-    this.circular = true,
-  });
+  const LogoEmpresaWidget({super.key, this.size = 36});
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: EmpresaConfigService(),
       builder: (context, _) {
-        final config = EmpresaConfigService();
+        final conf = EmpresaConfigService();
 
-        if (config.logoBase64 != null && config.logoBase64!.isNotEmpty) {
+        if (conf.logoBase64 != null && conf.logoBase64!.isNotEmpty) {
           try {
-            final imageBytes = base64Decode(config.logoBase64!);
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(circular ? size / 2 : 8),
-              child: Image.memory(
-                imageBytes,
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 8),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Image.memory(
+                  base64Decode(conf.logoBase64!),
+                  fit: BoxFit.cover,
+                ),
               ),
             );
           } catch (_) {}
         }
 
-        final partes = config.nombreDespacho.trim().split(' ');
-        String iniciales = 'DS';
+        final partes = conf.nombreDespacho.trim().split(' ');
+        String iniciales = 'SC';
         if (partes.isNotEmpty && partes[0].isNotEmpty) {
           iniciales = partes[0][0];
           if (partes.length > 1 && partes[1].isNotEmpty) {
@@ -47,21 +50,29 @@ class LogoEmpresaWidget extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            shape: circular ? BoxShape.circle : BoxShape.rectangle,
-            borderRadius: circular ? null : BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFF38BDF8), width: 1.5),
-            gradient: const RadialGradient(
-              colors: [Color(0xFF0284C7), Color(0xFF0F172A)],
+            borderRadius: BorderRadius.circular(8),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD4AF37).withOpacity(0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Center(
             child: Text(
               iniciales.toUpperCase(),
               style: TextStyle(
-                color: Colors.cyanAccent,
-                fontWeight: FontWeight.bold,
+                color: const Color(0xFFF5E6BE),
+                fontWeight: FontWeight.w700,
                 fontSize: size * 0.40,
-                letterSpacing: 1.1,
+                letterSpacing: 1.2,
               ),
             ),
           ),

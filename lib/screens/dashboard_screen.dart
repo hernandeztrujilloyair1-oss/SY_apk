@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/poliza_model.dart';
 import '../services/api_service.dart';
@@ -29,17 +31,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   final List<MenuItemModel> _menuItems = const [
-    MenuItemModel(titulo: 'ASEGURADOS', icono: Icons.groups),
-    MenuItemModel(titulo: 'BUSCADOR', icono: Icons.person_search),
-    MenuItemModel(titulo: 'PÓLIZAS', icono: Icons.description),
-    MenuItemModel(titulo: 'COBRANZA', icono: Icons.payments),
-    MenuItemModel(titulo: 'SINIESTROS', icono: Icons.car_crash),
-    MenuItemModel(titulo: 'REPORTES', icono: Icons.bar_chart),
-    MenuItemModel(titulo: 'Flotillas e Incisos', icono: Icons.directions_car),
-    MenuItemModel(titulo: 'CRM Prospectos', icono: Icons.filter_alt),
-    MenuItemModel(titulo: 'TAREAS', icono: Icons.checklist),
+    MenuItemModel(titulo: 'ASEGURADOS', icono: Icons.groups_outlined),
+    MenuItemModel(titulo: 'BUSCADOR', icono: Icons.manage_search),
+    MenuItemModel(titulo: 'PÓLIZAS', icono: Icons.description_outlined),
+    MenuItemModel(titulo: 'COBRANZA', icono: Icons.account_balance_wallet_outlined),
+    MenuItemModel(titulo: 'SINIESTROS', icono: Icons.car_crash_outlined),
+    MenuItemModel(titulo: 'REPORTES', icono: Icons.insert_chart_outlined),
+    MenuItemModel(titulo: 'Flotillas e Incisos', icono: Icons.directions_car_outlined),
+    MenuItemModel(titulo: 'CRM Prospectos', icono: Icons.filter_alt_outlined),
+    MenuItemModel(titulo: 'TAREAS', icono: Icons.checklist_outlined),
     MenuItemModel(titulo: 'About', icono: Icons.info_outline),
-    MenuItemModel(titulo: 'App Gallery', icono: Icons.apps),
+    MenuItemModel(titulo: 'App Gallery', icono: Icons.grid_view_outlined),
   ];
 
   @override
@@ -49,7 +51,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _cargarDatos() async {
-    final list = await ApiService.obtenerPolizas();
+    final list = await ApiService.obtenerPolizas(
+      tabla: _seccionActiva == 'COBRANZA' ? 'RECIBOS_COBRANZA' : _seccionActiva,
+    );
     if (mounted) setState(() => _polizas = list);
   }
 
@@ -57,9 +61,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Clipboard.setData(ClipboardData(text: texto));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$campo copiado: $texto'),
+        content: Text('$campo copiado:$texto'),
         duration: const Duration(seconds: 2),
-        backgroundColor: const Color(0xFF1B365D),
+        backgroundColor: const Color(0xFF091428),
       ),
     );
   }
@@ -69,6 +73,119 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => ModalCargaIa(onGuardado: _cargarDatos),
+    );
+  }
+
+  void _configurarEmpresa() {
+    final conf = EmpresaConfigService();
+    final nom = TextEditingController(text: conf.nombreDespacho);
+    final lema = TextEditingController(text: conf.lemaDespacho);
+    final broker = TextEditingController(text: conf.brokerTitular);
+    final contacto = TextEditingController(text: conf.correoContacto);
+    final cobranza = TextEditingController(text: conf.correoCobranza);
+    String? imgTemp = conf.logoBase64;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlg) => AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFD4AF37), width: 1),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.workspace_premium, color: Color(0xFFD4AF37)),
+              SizedBox(width: 10),
+              Text(
+                'Personalización de Marca (SaaS)',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: imgTemp != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.memory(base64Decode(imgTemp!), width: 68, height: 68, fit: BoxFit.cover),
+                        )
+                      : const LogoEmpresaWidget(size: 68),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFD4AF37),
+                    side: const BorderSide(color: Color(0xFFD4AF37)),
+                  ),
+                  icon: const Icon(Icons.upload_file, size: 16),
+                  label: const Text('Subir Logotipo del Despacho'),
+                  onPressed: () async {
+                    final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+                    if (r != null && r.files.single.bytes != null) {
+                      setDlg(() => imgTemp = base64Encode(r.files.single.bytes!));
+                    }
+                  },
+                ),
+                const SizedBox(height: 14),
+                _campoModal('Razón Social / Nombre Comercial', nom),
+                const SizedBox(height: 8),
+                _campoModal('Lema o Slogan', lema),
+                const SizedBox(height: 8),
+                _campoModal('Broker Director / Titular', broker),
+                const SizedBox(height: 8),
+                _campoModal('Correo Notificaciones Admin', contacto),
+                const SizedBox(height: 8),
+                _campoModal('Correo Cobranza CC', cobranza),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF0F172A),
+              ),
+              onPressed: () async {
+                await conf.guardar(
+                  nuevoNombre: nom.text,
+                  nuevoLema: lema.text,
+                  nuevoBroker: broker.text,
+                  nuevoCorreo: contacto.text,
+                  nuevoCobranza: cobranza.text,
+                  nuevoLogo: imgTemp,
+                );
+                setState(() {});
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar Marca', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _campoModal(String label, TextEditingController c) {
+    return TextField(
+      controller: c,
+      style: const TextStyle(color: Colors.white, fontSize: 13),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+        filled: true,
+        fillColor: const Color(0xFF1E293B),
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
     );
   }
 
@@ -82,9 +199,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlg) => AlertDialog(
-          backgroundColor: const Color(0xFF131F37),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Text('Registro de Atención CRM', style: TextStyle(color: Colors.white, fontSize: 16)),
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFD4AF37), width: 1),
+          ),
+          title: const Text('Gestión de Cobranza y Atención', style: TextStyle(color: Colors.white, fontSize: 16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,16 +216,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   labelText: '¿Quién atiende?',
                   labelStyle: TextStyle(color: Colors.white54),
                   filled: true,
-                  fillColor: Color(0xFF0B1528),
-                  border: OutlineInputBorder(),
+                  fillColor: Color(0xFF1E293B),
                 ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: medioSeleccionado,
-                dropdownColor: const Color(0xFF0F172A),
+                dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: const InputDecoration(filled: true, fillColor: Color(0xFF0B1528)),
+                decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B)),
                 items: const [
                   DropdownMenuItem(value: '1. Correo', child: Text('1. Correo Electrónico (con CC)')),
                   DropdownMenuItem(value: '2. WhatsApp Directo', child: Text('2. WhatsApp Directo')),
@@ -118,22 +237,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('¿Lleva Comparativa?', style: TextStyle(color: Colors.white, fontSize: 13)),
                 value: llevaComparativa,
-                activeColor: Colors.cyanAccent,
+                activeColor: const Color(0xFFD4AF37),
                 onChanged: (v) => setDlg(() => llevaComparativa = v),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.white60))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0284C7)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF0F172A),
+              ),
               onPressed: () async {
                 Navigator.pop(ctx);
                 final msg = ReglasNegocioService.armarMensajeWhatsApp(
                   cliente: item.titular,
                   poliza: item.numeroPoliza,
                   ramo: item.ramo,
-                  ejecutivoAtencion: atendioCtrl.text.trim(),
+                  ejecutivo: atendioCtrl.text.trim(),
                   esGrupo: medioSeleccionado.contains('Grupo'),
                   llevaComparativa: llevaComparativa,
                 );
@@ -143,11 +268,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
                 } else {
                   final correosCC = ReglasNegocioService.obtenerCorreosCC().join(',');
-                  final uri = Uri.parse('mailto:?cc=$correosCC&subject=${Uri.encodeComponent("Gestión de Cobranza ${item.numeroPoliza} - ${conf.nombreDespacho}")}&body=${Uri.encodeComponent(msg)}');
+                  final uri = Uri.parse('mailto:?cc=$correosCC&subject=${Uri.encodeComponent("Gestión de Póliza ${item.numeroPoliza} - ${conf.nombreDespacho}")}&body=${Uri.encodeComponent(msg)}');
                   if (await canLaunchUrl(uri)) launchUrl(uri);
                 }
               },
-              child: const Text('Enviar', style: TextStyle(color: Colors.white)),
+              child: const Text('Enviar Notificación', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -161,39 +286,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final bool esPantallaAncha = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F2537),
-        elevation: 1,
+        backgroundColor: const Color(0xFF091428),
+        elevation: 0,
         titleSpacing: 0,
+        leading: esPantallaAncha
+            ? null
+            : Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
         title: Row(
           children: [
-            const SizedBox(width: 8),
-            const LogoEmpresaWidget(size: 32),
-            const SizedBox(width: 12),
-            Text(
-              conf.nombreDespacho.isNotEmpty && conf.nombreDespacho != 'Despacho de Seguros'
-                  ? conf.nombreDespacho
-                  : 'Sistema Cartera y Operaciones',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            const SizedBox(width: 14),
+            GestureDetector(
+              onTap: _configurarEmpresa,
+              child: const LogoEmpresaWidget(size: 34),
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  conf.nombreDespacho,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  conf.lemaDespacho,
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, letterSpacing: 0.2),
+                ),
+              ],
+            ),
+            const SizedBox(width: 28),
             Expanded(
               child: Container(
                 height: 38,
                 margin: const EdgeInsets.symmetric(vertical: 8),
-                constraints: const BoxConstraints(maxWidth: 600),
+                constraints: const BoxConstraints(maxWidth: 620),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
                 ),
                 child: TextField(
                   controller: _searchCtrl,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Search $_seccionActiva',
-                    hintStyle: const TextStyle(color: Colors.white60, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white60, size: 18),
+                    hintText: 'Search $_seccionActiva (Titular, Póliza, Serie)...',
+                    hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37), size: 18),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -206,18 +356,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync, color: Colors.white70, size: 20),
-            tooltip: 'Sincronizar',
+            icon: const Icon(Icons.sync, color: Color(0xFFD4AF37), size: 20),
+            tooltip: 'Sincronizar Cloud Sheets',
             onPressed: _cargarDatos,
           ),
+          IconButton(
+            icon: const Icon(Icons.palette_outlined, color: Colors.white70, size: 20),
+            tooltip: 'Marca Blanca',
+            onPressed: _configurarEmpresa,
+          ),
           Padding(
-            padding: const EdgeInsets.only(right: 16, left: 8),
+            padding: const EdgeInsets.only(right: 18, left: 6),
             child: CircleAvatar(
-              radius: 14,
-              backgroundColor: const Color(0xFF0284C7),
+              radius: 15,
+              backgroundColor: const Color(0xFFD4AF37),
               child: Text(
-                conf.brokerTitular.isNotEmpty ? conf.brokerTitular[0].toUpperCase() : 'H',
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                conf.brokerTitular.isNotEmpty ? conf.brokerTitular[0].toUpperCase() : 'D',
+                style: const TextStyle(color: Color(0xFF091428), fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
           )
@@ -228,11 +383,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           if (esPantallaAncha)
             SizedBox(
-              width: 240,
+              width: 250,
               child: Container(
                 decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
+                  color: Color(0xFF0B192C),
+                  border: Border(right: BorderSide(color: Color(0xFF1E293B))),
                 ),
                 child: _construirMenuLateral(),
               ),
@@ -244,39 +399,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _construirMenuLateral() {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      children: _menuItems.map((item) {
-        final bool seleccionada = _seccionActiva == item.titulo;
+    return Container(
+      color: const Color(0xFF0B192C),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        children: _menuItems.map((item) {
+          final bool seleccionada = _seccionActiva == item.titulo;
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: seleccionada ? const Color(0xFFE2E8F0) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: ListTile(
-            dense: true,
-            leading: Icon(
-              item.icono,
-              size: 20,
-              color: seleccionada ? const Color(0xFF0F2537) : const Color(0xFF64748B),
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            decoration: BoxDecoration(
+              color: seleccionada ? const Color(0xFF1E293B) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: seleccionada
+                  ? const Border(left: BorderSide(color: Color(0xFFD4AF37), width: 3.5))
+                  : null,
             ),
-            title: Text(
-              item.titulo,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
-                color: seleccionada ? const Color(0xFF0F2537) : const Color(0xFF334155),
+            child: ListTile(
+              dense: true,
+              leading: Icon(
+                item.icono,
+                size: 20,
+                color: seleccionada ? const Color(0xFFD4AF37) : const Color(0xFF94A3B8),
               ),
+              title: Text(
+                item.titulo,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
+                  color: seleccionada ? Colors.white : const Color(0xFFCBD5E1),
+                  letterSpacing: 0.2,
+                ),
+              ),
+              onTap: () {
+                setState(() => _seccionActiva = item.titulo);
+                _cargarDatos();
+                if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+              },
             ),
-            onTap: () {
-              setState(() => _seccionActiva = item.titulo);
-              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
-            },
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -285,7 +448,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
@@ -295,32 +458,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 _seccionActiva,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF091428),
+                  letterSpacing: 0.3,
                 ),
               ),
               const Spacer(),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F2537),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  backgroundColor: const Color(0xFF091428),
+                  foregroundColor: const Color(0xFFD4AF37),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Color(0xFFD4AF37), width: 0.8),
+                  ),
                 ),
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                label: const Text('Add Recibo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: _abrirModalNuevoRegistro,
               ),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.filter_list, size: 20, color: Color(0xFF64748B)),
-                tooltip: 'Filtrar',
                 onPressed: () {},
               ),
               IconButton(
                 icon: const Icon(Icons.check_box_outlined, size: 20, color: Color(0xFF64748B)),
-                tooltip: 'Selección múltiple',
                 onPressed: () {},
               ),
             ],
@@ -337,6 +502,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return p.titular.toLowerCase().contains(q) ||
           p.numeroPoliza.toLowerCase().contains(q) ||
           p.placas.toLowerCase().contains(q) ||
+          p.serie.toLowerCase().contains(q) ||
           p.aseguradora.toLowerCase().contains(q);
     }).toList();
 
@@ -344,29 +510,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return const Center(
         child: Text(
           'No items',
-          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
         ),
       );
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       itemCount: filtradas.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (ctx, i) {
         final item = filtradas[i];
+        final bool esPagado = item.avisoEstado.toLowerCase().contains('pagado') ||
+            item.avisoEstado.toLowerCase().contains('cobrado');
+
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
+              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 3)),
             ],
           ),
           child: Column(
@@ -375,61 +540,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(4),
+                      color: esPagado ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: esPagado
+                            ? const Color(0xFF059669).withOpacity(0.3)
+                            : const Color(0xFFD97706).withOpacity(0.3),
+                      ),
                     ),
                     child: Text(
-                      'Col B: ${item.avisoEstado}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF334155)),
+                      item.avisoEstado.toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                        color: esPagado ? const Color(0xFF047857) : const Color(0xFFB45309),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
-                      borderRadius: BorderRadius.circular(4),
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       item.tipoPersona,
-                      style: const TextStyle(color: Color(0xFF0369A1), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Color(0xFF475569), fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '\$ ${item.primaNeta.toStringAsFixed(2)} MXN',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF091428)),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 item.titular,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
               const SizedBox(height: 4),
               Text(
-                '${item.aseguradora} | ${item.ramo} | Póliza: ${item.numeroPoliza}',
+                '${item.aseguradora} | ${item.ramo} \vert{} Póliza: ${item.numeroPoliza}',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               Text(
-                'Placas: ${item.placas.isEmpty ? "N/A" : item.placas} | Serie: ${item.serie.isEmpty ? "N/A" : item.serie} | Vigencia: ${item.inicioVigencia} al ${item.finVigencia}',
+                'Vehículo: ${item.bienAsegurado} | Placas: ${item.placas.isEmpty ? "N/A" : item.placas} \vert{} Serie: ${item.serie.isEmpty ? "N/A" : item.serie}',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  Text('Atiende: ${item.atendio}', style: const TextStyle(fontSize: 11, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
+                  Text(
+                    'Responsable: ${item.atendio}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF0369A1), fontWeight: FontWeight.w600),
+                  ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 16, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF64748B)),
                     tooltip: 'Copiar Póliza',
                     onPressed: () => _copiarTexto(item.numeroPoliza, 'Póliza'),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.send, size: 16, color: Colors.green),
+                    icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF059669)),
                     tooltip: 'Atención WhatsApp / Correo',
                     onPressed: () => _procesarAtencionCliente(item),
                   ),
