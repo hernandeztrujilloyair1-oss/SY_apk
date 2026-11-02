@@ -32,9 +32,9 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
 
   String _avisoEstado = '1°';
   String _vendedor = 'SR RAUL';
-  final String _claveAgente = '123456 - RAUL MARTINEZ (DIRECTO)';
-  final bool _esRenovacion = false;
-  final String _polizaAnterior = '';
+  String _claveAgente = '123456 - RAUL MARTINEZ (DIRECTO)';
+  bool _esRenovacion = false;
+  String _polizaAnterior = '';
 
   // Checks obligatorios
   bool _chkPoliza = false;
@@ -176,14 +176,14 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                     ),
                     if (_archivoNombre != null) ...[
                       const SizedBox(height: 6),
-                      const Text('Archivo: \$_archivoNombre', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                      Text('Archivo: \$_archivoNombre', style: const TextStyle(color: Colors.greenAccent, fontSize: 12)),
                     ],
                     const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: _avisoEstado,
+                            value: _avisoEstado,
                             dropdownColor: const Color(0xFF0B1528),
                             style: const TextStyle(color: Colors.white, fontSize: 13),
                             decoration: InputDecoration(
@@ -204,7 +204,7 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: _vendedor,
+                            value: _vendedor,
                             dropdownColor: const Color(0xFF0B1528),
                             style: const TextStyle(color: Colors.white, fontSize: 13),
                             decoration: InputDecoration(
@@ -267,7 +267,7 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF08101E),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                        border: Border.all(color: Colors.amber.withOpacity(0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

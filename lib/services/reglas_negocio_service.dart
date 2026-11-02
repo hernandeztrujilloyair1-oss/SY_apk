@@ -1,8 +1,29 @@
+import 'empresa_config_service.dart';
+
 class ReglasNegocioService {
-  /// Genera el texto del mensaje para WhatsApp según el medio, el tipo de aviso y los datos del cliente/póliza.
+  /// Obtiene los correos en copia (CC) directamente de la configuración activa de Marca Blanca.
+  static List<String> obtenerCorreosCC() {
+    final conf = EmpresaConfigService();
+    final List<String> correos = [];
+
+    final contacto = conf.correoContacto.trim();
+    final cobranza = conf.correoCobranza.trim();
+
+    if (contacto.isNotEmpty) {
+      correos.add(contacto);
+    }
+    if (cobranza.isNotEmpty && cobranza.toLowerCase() != contacto.toLowerCase()) {
+      correos.add(cobranza);
+    }
+
+    return correos;
+  }
+
+  /// Genera el texto del mensaje para WhatsApp adaptado a la Marca Blanca del despacho.
   static String armarMensajeWhatsApp({
     required String cliente,
-    required String ramo,
+    String? ramo,
+    String? poliza,
     String? folio,
     String? avisoTipo, // '1°', '2°', '3°', 'SR RAUL', etc.
     String? nuevoCorreo,
@@ -10,16 +31,22 @@ class ReglasNegocioService {
     bool esGrupo = false,
     bool llevaComparativa = false,
   }) {
+    final conf = EmpresaConfigService();
     final buffer = StringBuffer();
 
-    // 1. Saludo y presentación
+    // 1. Identidad dinámica del despacho y ejecutivo
     final nombreAtendio = (ejecutivo != null && ejecutivo.isNotEmpty)
         ? ejecutivo
-        : 'Yair Hernández';
+        : (conf.brokerTitular.isNotEmpty ? conf.brokerTitular : 'su Asesor de Seguros');
 
+    final nombreDespacho = conf.nombreDespacho.isNotEmpty
+        ? conf.nombreDespacho
+        : 'su Despacho de Seguros';
+
+    // Saludo y presentación
     if (!esGrupo) {
       buffer.writeln(
-        'Hola $cliente, soy $nombreAtendio de Enfoque Seguro, le hablo por parte de su broker Raúl Martínez.',
+        'Hola $cliente, le saluda $nombreAtendio de $nombreDespacho.',
       );
     } else {
       buffer.writeln('Estimado(a) $cliente:');
@@ -27,7 +54,8 @@ class ReglasNegocioService {
     buffer.writeln();
 
     // 2. Traductor inteligente de ramo
-    final ramoAjustado = _ajustarTextoRamo(ramo);
+    final ramoTexto = (ramo != null && ramo.isNotEmpty) ? ramo : 'Póliza';
+    final ramoAjustado = _ajustarTextoRamo(ramoTexto);
 
     // 3. Redacción según el tipo de aviso o gestión
     switch (avisoTipo) {
@@ -48,7 +76,7 @@ class ReglasNegocioService {
         break;
       case 'SR RAUL':
         buffer.writeln(
-          'Por indicación directa del Sr. Raúl Martínez, le compartimos la actualización sobre su $ramoAjustado.',
+          'Por indicación directa de la Dirección ($nombreAtendio), le compartimos la actualización sobre su $ramoAjustado.',
         );
         break;
       default:
@@ -57,9 +85,10 @@ class ReglasNegocioService {
         );
     }
 
-    // 4. Inclusión de folio o referencia
-    if (folio != null && folio.isNotEmpty) {
-      buffer.writeln('Referencia / Folio: $folio');
+    // 4. Inclusión de póliza si fue proporcionada
+    final refPoliza = poliza ?? folio;
+    if (refPoliza != null && refPoliza.isNotEmpty) {
+      buffer.writeln('Póliza / Referencia: $refPoliza');
     }
 
     // 5. Inclusión de nuevo correo si fue registrado

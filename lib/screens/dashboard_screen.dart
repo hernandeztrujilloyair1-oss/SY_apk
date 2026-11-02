@@ -61,7 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Clipboard.setData(ClipboardData(text: texto));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$campo copiado:$texto'),
+        content: Text('$campo copiado: $texto'),
         duration: const Duration(seconds: 2),
         backgroundColor: const Color(0xFF091428),
       ),
@@ -159,12 +159,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   nuevoNombre: nom.text,
                   nuevoLema: lema.text,
                   nuevoBroker: broker.text,
-                  nuevoCorreo: contacto.text,
-                  nuevoCobranza: cobranza.text,
+                  nuevoCorreoContacto: contacto.text,
+                  nuevoCorreoCobranza: cobranza.text,
                   nuevoLogo: imgTemp,
                 );
-                setState(() {});
-                Navigator.pop(ctx);
+                if (mounted) setState(() {});
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('Guardar Marca', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -221,7 +221,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: medioSeleccionado,
+                value: medioSeleccionado,
                 dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white, fontSize: 13),
                 decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B)),
@@ -237,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('¿Lleva Comparativa?', style: TextStyle(color: Colors.white, fontSize: 13)),
                 value: llevaComparativa,
-                activeThumbColor: const Color(0xFFD4AF37),
+                activeColor: const Color(0xFFD4AF37),
                 onChanged: (v) => setDlg(() => llevaComparativa = v),
               ),
             ],
@@ -333,9 +333,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 constraints: const BoxConstraints(maxWidth: 620),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
                 ),
                 child: TextField(
                   controller: _searchCtrl,
@@ -531,7 +531,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 3)),
+              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 3)),
             ],
           ),
           child: Column(
@@ -546,8 +546,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: esPagado
-                            ? const Color(0xFF059669).withValues(alpha: 0.3)
-                            : const Color(0xFFD97706).withValues(alpha: 0.3),
+                            ? const Color(0xFF059669).withOpacity(0.3)
+                            : const Color(0xFFD97706).withOpacity(0.3),
                       ),
                     ),
                     child: Text(
@@ -585,11 +585,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                '${item.aseguradora} | ${item.ramo} \vert{} Póliza: ${item.numeroPoliza}',
+                '${item.aseguradora} | ${item.ramo} | Póliza: ${item.numeroPoliza}',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               Text(
-                'Vehículo: ${item.bienAsegurado} | Placas: ${item.placas.isEmpty ? "N/A" : item.placas} \vert{} Serie: ${item.serie.isEmpty ? "N/A" : item.serie}',
+                'Vehículo: ${item.bienAsegurado} | Placas: ${item.placas.isEmpty ? "N/A" : item.placas} | Serie: ${item.serie.isEmpty ? "N/A" : item.serie}',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 12),

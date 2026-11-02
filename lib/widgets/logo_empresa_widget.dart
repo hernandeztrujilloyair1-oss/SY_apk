@@ -23,7 +23,7 @@ class LogoEmpresaWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.2), blurRadius: 8),
+                  BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 8),
                 ],
               ),
               child: ClipRRect(
@@ -59,7 +59,7 @@ class LogoEmpresaWidget extends StatelessWidget {
             border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFD4AF37).withValues(alpha: 0.25),
+                color: const Color(0xFFD4AF37).withOpacity(0.25),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
