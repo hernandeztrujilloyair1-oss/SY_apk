@@ -5,79 +5,54 @@ import '../services/empresa_config_service.dart';
 class LogoEmpresaWidget extends StatelessWidget {
   final double size;
 
-  const LogoEmpresaWidget({super.key, this.size = 36});
+  const LogoEmpresaWidget({super.key, this.size = 40});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: EmpresaConfigService(),
-      builder: (context, _) {
-        final conf = EmpresaConfigService();
+    final conf = EmpresaConfigService();
+    final logoBase64 = conf.logoBase64;
 
-        if (conf.logoBase64 != null && conf.logoBase64!.isNotEmpty) {
-          try {
-            return Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
-                boxShadow: [
-                  BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 8),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: Image.memory(
-                  base64Decode(conf.logoBase64!),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            );
-          } catch (_) {}
-        }
-
-        final partes = conf.nombreDespacho.trim().split(' ');
-        String iniciales = 'SC';
-        if (partes.isNotEmpty && partes[0].isNotEmpty) {
-          iniciales = partes[0][0];
-          if (partes.length > 1 && partes[1].isNotEmpty) {
-            iniciales += partes[1][0];
-          }
-        }
-
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFD4AF37).withOpacity(0.25),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              iniciales.toUpperCase(),
-              style: TextStyle(
-                color: const Color(0xFFF5E6BE),
-                fontWeight: FontWeight.w700,
-                fontSize: size * 0.40,
-                letterSpacing: 1.2,
-              ),
-            ),
+    // 1. Si el usuario subió un logo personalizado en la app, lo mostramos
+    if (logoBase64 != null && logoBase64.isNotEmpty) {
+      try {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            base64Decode(logoBase64),
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
           ),
         );
-      },
+      } catch (_) {}
+    }
+
+    // 2. Si no, mostramos tu logo oficial predeterminado de assets
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.asset(
+        'assets/images/logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (ctx, err, stack) {
+          // Si por alguna razón la imagen aún no está colocada, muestra ícono temporal
+          return Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFD4AF37)),
+            ),
+            child: const Icon(
+              Icons.shield_outlined,
+              color: Color(0xFFD4AF37),
+              size: 20,
+            ),
+          );
+        },
+      ),
     );
   }
 }

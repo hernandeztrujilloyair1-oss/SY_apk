@@ -183,7 +183,7 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _avisoEstado,
+                            initialValue: _avisoEstado,
                             dropdownColor: const Color(0xFF0B1528),
                             style: const TextStyle(color: Colors.white, fontSize: 13),
                             decoration: InputDecoration(
@@ -204,7 +204,7 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _vendedor,
+                            initialValue: _vendedor,
                             dropdownColor: const Color(0xFF0B1528),
                             style: const TextStyle(color: Colors.white, fontSize: 13),
                             decoration: InputDecoration(
@@ -267,7 +267,7 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF08101E),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.withOpacity(0.4)),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

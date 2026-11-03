@@ -9,6 +9,8 @@ import '../services/empresa_config_service.dart';
 import '../services/reglas_negocio_service.dart';
 import '../widgets/logo_empresa_widget.dart';
 import 'modal_carga_ia.dart';
+import 'cotizador_autos_vista.dart';
+import 'cotizador_gmm_vista.dart';
 
 class MenuItemModel {
   final String titulo;
@@ -35,6 +37,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     MenuItemModel(titulo: 'BUSCADOR', icono: Icons.manage_search),
     MenuItemModel(titulo: 'PÓLIZAS', icono: Icons.description_outlined),
     MenuItemModel(titulo: 'COBRANZA', icono: Icons.account_balance_wallet_outlined),
+    MenuItemModel(titulo: 'COTIZADOR AUTOS', icono: Icons.directions_car),
+    MenuItemModel(titulo: 'COTIZADOR GMM', icono: Icons.health_and_safety_outlined),
     MenuItemModel(titulo: 'SINIESTROS', icono: Icons.car_crash_outlined),
     MenuItemModel(titulo: 'REPORTES', icono: Icons.insert_chart_outlined),
     MenuItemModel(titulo: 'Flotillas e Incisos', icono: Icons.directions_car_outlined),
@@ -51,6 +55,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _cargarDatos() async {
+    if (_seccionActiva == 'COTIZADOR AUTOS' || _seccionActiva == 'COTIZADOR GMM') {
+      return;
+    }
     final list = await ApiService.obtenerPolizas(
       tabla: _seccionActiva == 'COBRANZA' ? 'RECIBOS_COBRANZA' : _seccionActiva,
     );
@@ -221,7 +228,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: medioSeleccionado,
+                initialValue: medioSeleccionado,
                 dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white, fontSize: 13),
                 decoration: const InputDecoration(filled: true, fillColor: Color(0xFF1E293B)),
@@ -237,7 +244,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('¿Lleva Comparativa?', style: TextStyle(color: Colors.white, fontSize: 13)),
                 value: llevaComparativa,
-                activeColor: const Color(0xFFD4AF37),
+                activeThumbColor: const Color(0xFFD4AF37),
                 onChanged: (v) => setDlg(() => llevaComparativa = v),
               ),
             ],
@@ -333,9 +340,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 constraints: const BoxConstraints(maxWidth: 620),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                 ),
                 child: TextField(
                   controller: _searchCtrl,
@@ -406,36 +413,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: _menuItems.map((item) {
           final bool seleccionada = _seccionActiva == item.titulo;
 
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 3),
-            decoration: BoxDecoration(
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Material(
               color: seleccionada ? const Color(0xFF1E293B) : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: seleccionada
-                  ? const Border(left: BorderSide(color: Color(0xFFD4AF37), width: 3.5))
-                  : null,
-            ),
-            child: ListTile(
-              dense: true,
-              leading: Icon(
-                item.icono,
-                size: 20,
-                color: seleccionada ? const Color(0xFFD4AF37) : const Color(0xFF94A3B8),
-              ),
-              title: Text(
-                item.titulo,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
-                  color: seleccionada ? Colors.white : const Color(0xFFCBD5E1),
-                  letterSpacing: 0.2,
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                dense: true,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: seleccionada
+                      ? const BorderSide(color: Color(0xFFD4AF37), width: 1.5)
+                      : BorderSide.none,
                 ),
+                leading: Icon(
+                  item.icono,
+                  size: 20,
+                  color: seleccionada ? const Color(0xFFD4AF37) : const Color(0xFF94A3B8),
+                ),
+                title: Text(
+                  item.titulo,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
+                    color: seleccionada ? Colors.white : const Color(0xFFCBD5E1),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                onTap: () {
+                  setState(() => _seccionActiva = item.titulo);
+                  _cargarDatos();
+                  if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+                },
               ),
-              onTap: () {
-                setState(() => _seccionActiva = item.titulo);
-                _cargarDatos();
-                if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
-              },
             ),
           );
         }).toList(),
@@ -444,6 +455,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _construirContenidoCentral() {
+    if (_seccionActiva == 'COTIZADOR AUTOS') {
+      return const CotizadorAutosVista();
+    } else if (_seccionActiva == 'COTIZADOR GMM') {
+      return const CotizadorGmmVista();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -531,7 +548,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 3)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 3)),
             ],
           ),
           child: Column(
@@ -546,8 +563,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: esPagado
-                            ? const Color(0xFF059669).withOpacity(0.3)
-                            : const Color(0xFFD97706).withOpacity(0.3),
+                            ? const Color(0xFF059669).withValues(alpha: 0.3)
+                            : const Color(0xFFD97706).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(

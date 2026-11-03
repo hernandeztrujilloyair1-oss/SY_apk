@@ -38,7 +38,7 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
               child: Column(
                 children: [
                   DropdownButtonFormField<AseguradoraInfo>(
-                    value: _aseguradora,
+                    initialValue: _aseguradora,
                     decoration: const InputDecoration(labelText: 'Aseguradora de GMM', border: OutlineInputBorder()),
                     items: CatalogoAseguradoras.gmm.map((a) {
                       return DropdownMenuItem(
@@ -64,7 +64,7 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _deducible,
+                          initialValue: _deducible,
                           decoration: const InputDecoration(labelText: 'Deducible', border: OutlineInputBorder()),
                           items: const [
                             DropdownMenuItem(value: '\$ 15,000', child: Text('\$ 15,000')),
@@ -78,7 +78,7 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _coaseguro,
+                          initialValue: _coaseguro,
                           decoration: const InputDecoration(labelText: 'Coaseguro', border: OutlineInputBorder()),
                           items: const [
                             DropdownMenuItem(value: '10%', child: Text('10% (Tope \$50k)')),

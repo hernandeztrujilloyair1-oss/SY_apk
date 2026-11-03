@@ -45,7 +45,7 @@ class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
               child: Column(
                 children: [
                   DropdownButtonFormField<AseguradoraInfo>(
-                    value: _aseguradora,
+                    initialValue: _aseguradora,
                     decoration: const InputDecoration(labelText: 'Aseguradora', border: OutlineInputBorder()),
                     items: CatalogoAseguradoras.autos.map((a) {
                       return DropdownMenuItem(
