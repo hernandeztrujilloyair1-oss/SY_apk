@@ -4,7 +4,7 @@ import '../models/poliza_model.dart';
 
 class ApiService {
   // Pega aquí la URL de tu Web App de Apps Script terminada en /exec
-  static String appsScriptUrl = "https://script.google.com/macros/s/AKfycbxrReLNfR4p9IElWphSrhZGkBXT1CVgoy0pNOjVjRvxjvzn6HQXi9t7-IK3ZVU8CaD7/exec";
+  static String appsScriptUrl = "https://script.google.com/macros/s/AKfycbxmXW6-mJEY9RZSIkOhB-aVyW1sj8UwuF73lK16-Qb7Rh4PB93ZOsCORhLeIG8gZQ0/exec";
 
   static Future<List<PolizaModel>> obtenerPolizas({String tabla = "RECIBOS_COBRANZA"}) async {
     if (appsScriptUrl.isNotEmpty && !appsScriptUrl.contains("TU_ID_AQUI")) {

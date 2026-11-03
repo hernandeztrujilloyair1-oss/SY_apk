@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import \'package:flutter/material.dart\';
 
 class EmpresaTenant {
   final String idEmpresa;
@@ -56,8 +56,8 @@ class EmpresaTenant {
       lema: 'Despacho Afiliado a Plataforma SaaS',
       colorPrimario: const Color(0xFF1E3A8A),
       colorAcento: const Color(0xFF38BDF8),
-      correoContacto: 'contacto@${id.toLowerCase()}.com',
-      correoCobranza: 'cobranza@${id.toLowerCase()}.com',
+      correoContacto: 'contacto@' + id.toLowerCase() + '.com',
+      correoCobranza: 'cobranza@' + id.toLowerCase() + '.com',
       logoUrl: '',
       tipoAlmacenamiento: 'SAAS_CENTRALIZADO',
       cuotaTotalGb: 250.0,
