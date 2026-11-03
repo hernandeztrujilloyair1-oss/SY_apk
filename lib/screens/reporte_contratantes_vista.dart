@@ -31,7 +31,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
       'prima': 13989.24,
       'fechaPago': '31/10/2026',
       'frecuencia': 'Trimestral',
-      'tarjetaPago': '', // Vacio para captura manual
+      'tarjetaPago': '',
       'estatus': 'LIQUIDADA',
     },
     {
@@ -73,6 +73,12 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -139,7 +145,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                     if (_seleccionados.length == lista.length) {
                       _seleccionados.clear();
                     } else {
-                      _seleccionados.addAll(lista.map((e) => e['documento'] as String));
+                      _seleccionados.addAll(lista.map((e) => e['documento'].toString()));
                     }
                   });
                 },
@@ -173,9 +179,9 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                       onSelectChanged: (v) {
                         setState(() {
                           if (v == true) {
-                            _seleccionados.add(p['documento']);
+                            _seleccionados.add(p['documento'].toString());
                           } else {
-                            _seleccionados.remove(p['documento']);
+                            _seleccionados.remove(p['documento'].toString());
                           }
                         });
                       },
@@ -185,23 +191,23 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                           onChanged: (v) {
                             setState(() {
                               if (v == true) {
-                                _seleccionados.add(p['documento']);
+                                _seleccionados.add(p['documento'].toString());
                               } else {
-                                _seleccionados.remove(p['documento']);
+                                _seleccionados.remove(p['documento'].toString());
                               }
                             });
                           },
                         )),
-                        DataCell(Text(p['documento'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-                        DataCell(Text(p['contratante'], style: const TextStyle(fontSize: 11))),
+                        DataCell(Text(p['documento'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataCell(Text(p['contratante'].toString(), style: const TextStyle(fontSize: 11))),
                         DataCell(Text('${p['compania']} | ${p['ramo']}', style: const TextStyle(fontSize: 11))),
                         DataCell(Text('\$ ${p['prima']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
-                        DataCell(Text(p['fechaPago'], style: const TextStyle(fontSize: 11))),
+                        DataCell(Text(p['fechaPago'].toString(), style: const TextStyle(fontSize: 11))),
                         DataCell(
                           Row(
                             children: [
                               Text(
-                                tieneTarjeta ? p['tarjetaPago'] : 'Sin Tarjeta (Completar)',
+                                tieneTarjeta ? p['tarjetaPago'].toString() : 'Sin Tarjeta (Completar)',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: tieneTarjeta ? Colors.black87 : Colors.red,
@@ -223,7 +229,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            p['estatus'],
+                            p['estatus'].toString(),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -244,7 +250,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
   }
 
   void _abrirModalTarjetaManual(Map<String, dynamic> item) {
-    final tarjetaCtrl = TextEditingController(text: item['tarjetaPago']);
+    final tarjetaCtrl = TextEditingController(text: item['tarjetaPago']?.toString() ?? '');
 
     showDialog(
       context: context,
@@ -254,7 +260,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Ingresa o corrige el banco y terminación de la tarjeta con la que pagó:', style: TextStyle(fontSize: 12)),
+            const Text('Ingresa o corrige el banco y terminación de la tarjeta:', style: TextStyle(fontSize: 12)),
             const SizedBox(height: 10),
             TextField(
               controller: tarjetaCtrl,
