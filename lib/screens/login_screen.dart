@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../services/tenant_service.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,34 +11,71 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usuarioCtrl = TextEditingController(text: 'ejemplo@segurodirecto.com');
-  final _passCtrl = TextEditingController(text: '••••••••');
+  String _empresaSeleccionada = 'EMP_ENFOQUE';
+  final TextEditingController _correoCtrl = TextEditingController(text: 'direccion@enfoqueseguro.mx');
+  final TextEditingController _passCtrl = TextEditingController(text: 'Master2026*');
+  bool _ocultarPass = true;
+  bool _cargando = false;
+  String _errorMsg = '';
 
-  void _entrar() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+  void _cambiarTenant(String nuevoId) {
+    setState(() {
+      _empresaSeleccionada = nuevoId;
+      TenantService().cambiarEmpresa(nuevoId);
+      if (nuevoId == 'EMP_ENFOQUE') {
+        _correoCtrl.text = 'direccion@enfoqueseguro.mx';
+        _passCtrl.text = 'Master2026*';
+      } else {
+        _correoCtrl.text = 'contacto@britopatrimonial.mx';
+        _passCtrl.text = 'Master2026*';
+      }
+    });
+  }
+
+  void _autenticar() async {
+    setState(() {
+      _cargando = true;
+      _errorMsg = '';
+    });
+
+    final exito = await AuthService().iniciarSesion(
+      _correoCtrl.text.trim(),
+      _passCtrl.text.trim(),
     );
+
+    setState(() => _cargando = false);
+
+    if (exito) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      }
+    } else {
+      setState(() => _errorMsg = 'Credenciales no autorizadas para este despacho.');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tenant = TenantService().empresaActiva;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1120),
+      backgroundColor: tenant.colorPrimario,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 440),
+            width: 440,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFF131F37),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.3)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 20,
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 25,
                   offset: const Offset(0, 10),
                 )
               ],
@@ -44,112 +83,118 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Selector de Empresa Contratante (Multi-Tenant)
                 Container(
-                  width: 90,
-                  height: 90,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF0284C7), width: 2),
-                    gradient: const RadialGradient(
-                      colors: [Color(0xFF0369A1), Color(0xFF0F172A)],
-                    ),
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: const Center(
-                    child: Text(
-                      'SY',
-                      style: TextStyle(
-                        color: Colors.cyanAccent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 32,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Gestión Integral de Seguros',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Bienvenido',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Ingrese sus credenciales corporativas',
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
-                ),
-                const SizedBox(height: 28),
-                TextField(
-                  controller: _usuarioCtrl,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Usuario o Correo',
-                    labelStyle: const TextStyle(color: Colors.white54),
-                    prefixIcon: const Icon(Icons.person, color: Color(0xFF0284C7)),
-                    filled: true,
-                    fillColor: const Color(0xFF0B1528),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passCtrl,
-                  obscureText: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña',
-                    labelStyle: const TextStyle(color: Colors.white54),
-                    prefixIcon: const Icon(Icons.lock, color: Color(0xFF0284C7)),
-                    filled: true,
-                    fillColor: const Color(0xFF0B1528),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: _entrar,
-                    child: const Text(
-                      'Iniciar Sesión',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _empresaSeleccionada,
+                      isExpanded: true,
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A), fontSize: 13),
+                      items: TenantService().empresasDisponibles.map((emp) {
+                        return DropdownMenuItem<String>(
+                          value: emp['id'],
+                          child: Row(
+                            children: [
+                              const Icon(Icons.business_outlined, size: 16, color: Color(0xFF0284C7)),
+                              const SizedBox(width: 8),
+                              Text('Empresa: ${emp['nombre']}'),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (v) => _cambiarTenant(v!),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0B1528),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.3)),
+
+                // Logo y Marca de la Empresa Contratante
+                CircleAvatar(
+                  radius: 34,
+                  backgroundColor: tenant.colorPrimario,
+                  child: Text(
+                    tenant.nombre.isNotEmpty ? tenant.nombre.substring(0, 1) : 'S',
+                    style: TextStyle(color: tenant.colorAcento, fontSize: 30, fontWeight: FontWeight.bold),
                   ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.lightBlueAccent, size: 18),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Cumple con los protocolos de seguridad y validación Art. 492.',
-                          style: TextStyle(color: Colors.white60, fontSize: 11),
-                        ),
-                      )
-                    ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  tenant.nombre,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                Text(
+                  tenant.lema,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 24),
+
+                if (_errorMsg.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_errorMsg, style: const TextStyle(color: Colors.red, fontSize: 12))),
+                      ],
+                    ),
                   ),
+
+                TextField(
+                  controller: _correoCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Correo de Usuario',
+                    prefixIcon: Icon(Icons.person_outline, size: 18),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _passCtrl,
+                  obscureText: _ocultarPass,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    prefixIcon: const Icon(Icons.lock_outline, size: 18),
+                    suffixIcon: IconButton(
+                      icon: Icon(_ocultarPass ? Icons.visibility_off : Icons.visibility, size: 18),
+                      onPressed: () => setState(() => _ocultarPass = !_ocultarPass),
+                    ),
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => _autenticar(),
+                ),
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: tenant.colorPrimario,
+                      foregroundColor: tenant.colorAcento,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: _cargando ? null : _autenticar,
+                    child: _cargando
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('ENTRAR AL ESPACIO AISLADO', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Espacio blindado e independiente por empresa cliente.',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
