@@ -35,13 +35,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Inicia directamente en el DASHBOARD ejecutivo con métricas
   String _seccionActiva = 'DASHBOARD';
   List<PolizaModel> _polizas = [];
   String _busquedaGlobal = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
-  // Menú limpio y profesional: sin About ni App Gallery
   final List<MenuItemModel> _menuItems = const [
     MenuItemModel(titulo: 'DASHBOARD', icono: Icons.dashboard_outlined),
     MenuItemModel(titulo: 'CALENDARIO', icono: Icons.calendar_month_outlined),
@@ -157,19 +155,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               : const LogoEmpresaWidget(size: 72),
                         ),
                         const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: colorAcentoTemp,
-                            side: BorderSide(color: colorAcentoTemp),
-                          ),
-                          icon: const Icon(Icons.upload_file, size: 16),
-                          label: const Text('Subir Nuevo Logotipo (PNG / JPG)'),
-                          onPressed: () async {
-                            final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-                            if (r != null && r.files.single.bytes != null) {
-                              setDlg(() => imgTemp = base64Encode(r.files.single.bytes!));
-                            }
-                          },
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: colorAcentoTemp,
+                                side: BorderSide(color: colorAcentoTemp),
+                              ),
+                              icon: const Icon(Icons.upload_file, size: 16),
+                              label: const Text('Subir Mi Logotipo (PNG / JPG)'),
+                              onPressed: () async {
+                                final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+                                if (r != null && r.files.single.bytes != null) {
+                                  setDlg(() => imgTemp = base64Encode(r.files.single.bytes!));
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            if (imgTemp != null)
+                              TextButton.icon(
+                                style: TextButton.styleFrom(foregroundColor: Colors.white54),
+                                icon: const Icon(Icons.restart_alt, size: 16),
+                                label: const Text('Quitar Logo'),
+                                onPressed: () => setDlg(() => imgTemp = null),
+                              ),
+                          ],
                         ),
                       ],
                     ),
@@ -223,6 +234,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.restore, size: 16, color: Colors.white54),
+              label: const Text('Restablecer Logo Original', style: TextStyle(color: Colors.white54, fontSize: 12)),
+              onPressed: () async {
+                await conf.restablecerPorDefecto();
+                if (mounted) setState(() {});
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+            ),
+            const Spacer(),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
@@ -311,7 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           title: const Text('Gestión de Cobranza y Notificación', style: TextStyle(color: Colors.white, fontSize: 16)),
           content: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: dynamicCrossAxisAlignment(),
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
@@ -384,6 +405,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
+  MainAxisSize dynamicCrossAxisAlignment() => MainAxisSize.min;
 
   @override
   Widget build(BuildContext context) {
