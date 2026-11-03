@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class ReporteContratantesVista extends StatefulWidget {
   const ReporteContratantesVista({super.key});
@@ -56,17 +56,6 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
       'tarjetaPago': 'Banorte Débito **** 1120',
       'estatus': 'CANCELADA',
     },
-    {
-      'documento': '4102500090220/0',
-      'contratante': 'DAVID ESPINOSA LOPEZ',
-      'compania': 'MAPFRE',
-      'ramo': 'Autos / Renault Expression',
-      'prima': 7792.15,
-      'fechaPago': '24/06/2026',
-      'frecuencia': 'Mensual',
-      'tarjetaPago': '',
-      'estatus': 'CANCELADA',
-    },
   ];
 
   @override
@@ -98,7 +87,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
           unselectedLabelColor: const Color(0xFF64748B),
           indicatorColor: const Color(0xFF0284C7),
           tabs: [
-            Tab(text: 'PÓLIZAS ACTIVAS & RECAUDACIÓN (${activas.length})'),
+            Tab(text: 'PÓLIZAS ACTIVAS (${activas.length})'),
             Tab(text: 'PÓLIZAS CANCELADAS (${canceladas.length})'),
           ],
         ),
@@ -125,19 +114,6 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                 'Seleccionados: ${_seleccionados.length}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
               ),
-              const SizedBox(width: 14),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), foregroundColor: const Color(0xFFD4AF37)),
-                icon: const Icon(Icons.picture_as_pdf, size: 16),
-                label: const Text('Generar Reporte de Seleccionados'),
-                onPressed: _seleccionados.isEmpty
-                    ? null
-                    : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Generando reporte para ${_seleccionados.length} contratantes seleccionados...')),
-                        );
-                      },
-              ),
               const Spacer(),
               TextButton(
                 onPressed: () {
@@ -162,12 +138,12 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                   headingRowColor: WidgetStateProperty.all(esCanceladas ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC)),
                   columns: const [
                     DataColumn(label: Text('Sel.')),
-                    DataColumn(label: Text('Póliza / Documento')),
+                    DataColumn(label: Text('Póliza')),
                     DataColumn(label: Text('Contratante')),
                     DataColumn(label: Text('Compañía / Ramo')),
                     DataColumn(label: Text('Prima Total')),
-                    DataColumn(label: Text('Próxima Fecha Pago')),
-                    DataColumn(label: Text('Tarjeta / Banco Registrado')),
+                    DataColumn(label: Text('Próxima Fecha')),
+                    DataColumn(label: Text('Tarjeta Registrada')),
                     DataColumn(label: Text('Estatus')),
                   ],
                   rows: lista.map((p) {
@@ -203,25 +179,7 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                         DataCell(Text('${p['compania']} | ${p['ramo']}', style: const TextStyle(fontSize: 11))),
                         DataCell(Text('\$ ${p['prima']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
                         DataCell(Text(p['fechaPago'].toString(), style: const TextStyle(fontSize: 11))),
-                        DataCell(
-                          Row(
-                            children: [
-                              Text(
-                                tieneTarjeta ? p['tarjetaPago'].toString() : 'Sin Tarjeta (Completar)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: tieneTarjeta ? Colors.black87 : Colors.red,
-                                  fontWeight: tieneTarjeta ? FontWeight.normal : FontWeight.bold,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit, size: 14, color: Color(0xFF0284C7)),
-                                tooltip: 'Completar o Modificar Tarjeta Manualmente',
-                                onPressed: () => _abrirModalTarjetaManual(p),
-                              ),
-                            ],
-                          ),
-                        ),
+                        DataCell(Text(tieneTarjeta ? p['tarjetaPago'].toString() : 'Sin Tarjeta', style: TextStyle(fontSize: 11, color: tieneTarjeta ? Colors.black87 : Colors.red))),
                         DataCell(Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -243,46 +201,6 @@ class _ReporteContratantesVistaState extends State<ReporteContratantesVista> wit
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _abrirModalTarjetaManual(Map<String, dynamic> item) {
-    final tarjetaCtrl = TextEditingController(text: item['tarjetaPago']?.toString() ?? '');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Datos de Cobro - ${item['contratante']}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Ingresa o corrige el banco y terminación de la tarjeta:', style: TextStyle(fontSize: 12)),
-            const SizedBox(height: 10),
-            TextField(
-              controller: tarjetaCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Ej: BBVA Visa Débito **** 4321',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), foregroundColor: const Color(0xFFD4AF37)),
-            onPressed: () {
-              setState(() {
-                item['tarjetaPago'] = tarjetaCtrl.text.trim();
-              });
-              Navigator.pop(ctx);
-            },
-            child: const Text('Guardar'),
           ),
         ],
       ),

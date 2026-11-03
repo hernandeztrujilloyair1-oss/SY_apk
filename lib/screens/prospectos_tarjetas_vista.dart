@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProspectosTarjetasVista extends StatefulWidget {
@@ -104,13 +104,6 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
                     onChanged: (v) => setState(() => _filtroBusqueda = v),
                   ),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A), foregroundColor: const Color(0xFFD4AF37)),
-                  icon: const Icon(Icons.person_add, size: 18),
-                  label: const Text('Nuevo Prospecto'),
-                  onPressed: () {},
-                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -149,7 +142,6 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
       ),
       child: Column(
         children: [
-          // Banda superior
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -159,7 +151,7 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(p['id'], style: TextStyle(color: esCancelado ? Colors.red : const Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+                Text(p['id'].toString(), style: TextStyle(color: esCancelado ? Colors.red : const Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
@@ -167,7 +159,7 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    p['estatus'],
+                    p['estatus'].toString(),
                     style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -185,7 +177,7 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
                       radius: 20,
                       backgroundColor: const Color(0xFFE2E8F0),
                       child: Text(
-                        p['nombre'].substring(0, 1),
+                        p['nombre'].toString().isNotEmpty ? p['nombre'].toString().substring(0, 1) : '?',
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                       ),
                     ),
@@ -194,7 +186,7 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p['nombre'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
+                          Text(p['nombre'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
                           Text('${p['empresa']} | RFC: ${p['rfc']}', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
                         ],
                       ),
@@ -205,19 +197,19 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _kpiMini('Total Pólizas', '${p['totalPolizas']} Activas', Icons.folder_shared),
-                    _kpiMini('Monto Cartera', '\$ ${p['montoEstimado']}', Icons.payments_outlined),
+                    Text('Total Pólizas: ${p['totalPolizas']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('\$ ${p['montoEstimado']}', style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const Divider(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(p['telefono'], style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                    Text(p['telefono'].toString(), style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
                     IconButton(
                       icon: const Icon(Icons.chat, color: Color(0xFF10B981), size: 18),
                       onPressed: () async {
-                        final tel = p['telefono'].replaceAll(' ', '');
+                        final tel = p['telefono'].toString().replaceAll(' ', '');
                         final uri = Uri.parse('https://wa.me/52$tel');
                         if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
                       },
@@ -230,22 +222,6 @@ class _ProspectosTarjetasVistaState extends State<ProspectosTarjetasVista> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _kpiMini(String titulo, String valor, IconData icono) {
-    return Row(
-      children: [
-        Icon(icono, size: 14, color: const Color(0xFF0284C7)),
-        const SizedBox(width: 4),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(titulo, style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-            Text(valor, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-          ],
-        ),
-      ],
     );
   }
 }

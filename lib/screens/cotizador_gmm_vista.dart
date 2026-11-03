@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/cotizador_pdf_service.dart';
 
 class CotizadorGmmVista extends StatefulWidget {
@@ -10,8 +10,8 @@ class CotizadorGmmVista extends StatefulWidget {
 
 class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
   final _titularCtrl = TextEditingController(text: 'FAMILIA CONTRERAS');
-  final _perfilCtrl = TextEditingController(text: 'Titular (42 años) + Cónyuge (39 años) + 2 Menores');
-  int _cantidadOpciones = 3;
+  final _perfilCtrl = TextEditingController(text: 'Titular (42) + Cónyuge (39)');
+  int _cantidadOpciones = 2;
 
   final List> _opcionesGmm = [
     {
@@ -20,7 +20,7 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
       'deducible': '\$18,000 MXN',
       'coaseguro': '10% (Tope \$45,000)',
       'gamaHospitalaria': 'Nivel Amplio / Hospitales Top',
-      'tabulador': 'Tabulador Alto (Médicos Especialistas)',
+      'tabulador': 'Tabulador Alto',
       'primaNeta': 48500.0,
       'derechoPoliza': 750.0,
     },
@@ -33,16 +33,6 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
       'tabulador': 'Tabulador Premier Nacional',
       'primaNeta': 46200.0,
       'derechoPoliza': 720.0,
-    },
-    {
-      'aseguradora': 'MetLife',
-      'plan': 'Medicalife Familiar',
-      'deducible': '\$15,000 MXN',
-      'coaseguro': '10% (Tope \$40,000)',
-      'gamaHospitalaria': 'Red Completa Hospitalaria',
-      'tabulador': 'Tabulador Élite Médico',
-      'primaNeta': 51000.0,
-      'derechoPoliza': 800.0,
     },
   ];
 
@@ -74,7 +64,7 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Cotizador Comparativo GMM (Gastos Médicos Mayores)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  Text('Cotizador Comparativo GMM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                   SizedBox(height: 4),
                   Text('Comparativa de pólizas médicas particulares y familiares.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                 ],
@@ -114,46 +104,7 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
             ],
           ),
           const SizedBox(height: 18),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _titularCtrl,
-                      decoration: const InputDecoration(labelText: 'Titular / Familia Asegurada', border: OutlineInputBorder(), isDense: true),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _perfilCtrl,
-                      decoration: const InputDecoration(labelText: 'Edades y Miembros del Grupo', border: OutlineInputBorder(), isDense: true),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _cantidadOpciones,
-                      decoration: const InputDecoration(labelText: 'Opciones', border: OutlineInputBorder(), isDense: true),
-                      items: const [
-                        DropdownMenuItem(value: 2, child: Text('2 Aseguradoras')),
-                        DropdownMenuItem(value: 3, child: Text('3 Aseguradoras')),
-                      ],
-                      onChanged: (v) => setState(() => _cantidadOpciones = v!),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(_cantidadOpciones, (i) {
               final op = _opcionesGmm[i];
               final calc = _calcularDesglose(op['primaNeta'] as double, op['derechoPoliza'] as double);
@@ -165,61 +116,24 @@ class _CotizadorGmmVistaState extends State<CotizadorGmmVista> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: i == 0 ? const Color(0xFFD4AF37) : const Color(0xFFE2E8F0), width: i == 0 ? 2 : 1),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(op['aseguradora'].toString(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      Text(op['plan'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
+                      Text(op['plan'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7))),
                       const Divider(height: 20),
-                      _fila('Deducible:', op['deducible'].toString()),
-                      _fila('Coaseguro:', op['coaseguro'].toString()),
-                      _fila('Gama Médica:', op['gamaHospitalaria'].toString()),
-                      _fila('Tabulador:', op['tabulador'].toString()),
-                      const SizedBox(height: 12),
-                      TextField(
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Prima Neta Anual (\$ MXN)', border: OutlineInputBorder(), isDense: true),
-                        controller: TextEditingController(text: (op['primaNeta'] as double).toStringAsFixed(0)),
-                        onChanged: (val) {
-                          final n = double.tryParse(val);
-                          if (n != null) setState(() => op['primaNeta'] = n);
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8)),
-                        child: Column(
-                          children: [
-                            Text('\$ ${calc['anual']!.toStringAsFixed(2)} MXN', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
-                            const Divider(height: 12),
-                            _fila('Semestral (x2):', '\$ ${calc['semestral']!.toStringAsFixed(2)}'),
-                            _fila('Trimestral (x4):', '\$ ${calc['trimestral']!.toStringAsFixed(2)}'),
-                            _fila('Mensual (x12):', '\$ ${calc['mensual']!.toStringAsFixed(2)}'),
-                          ],
-                        ),
-                      ),
+                      Text('Deducible: ${op['deducible']}', style: const TextStyle(fontSize: 11)),
+                      Text('Coaseguro: ${op['coaseguro']}', style: const TextStyle(fontSize: 11)),
+                      const SizedBox(height: 10),
+                      Text('Total Anual: \$ ${calc['anual']!.toStringAsFixed(2)} MXN', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                     ],
                   ),
                 ),
               );
             }),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _fila(String etiqueta, String valor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(etiqueta, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-          Flexible(child: Text(valor, textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)))),
         ],
       ),
     );

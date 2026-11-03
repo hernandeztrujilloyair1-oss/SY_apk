@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class PlantillasScreen extends StatefulWidget {
@@ -25,11 +25,6 @@ class _PlantillasScreenState extends State<PlantillasScreen> {
       'categoria': 'COBRANZA',
       'cuerpo': 'URGENTE: Estimado(a) {CLIENTE}, la aseguradora emitirá cancelación por falta de pago de la póliza {POLIZA}. Por favor contáctenos de inmediato para reactivar su protección.',
     },
-    {
-      'titulo': 'Felicitación de Cumpleaños',
-      'categoria': 'FIDELIZACIÓN',
-      'cuerpo': '¡Feliz Cumpleaños {CLIENTE}! En Enfoque Seguro le deseamos un excelente día lleno de salud, éxito y bienestar en compañía de sus seres queridos. ¡Un fuerte abrazo!',
-    },
   ];
 
   @override
@@ -54,29 +49,19 @@ class _PlantillasScreenState extends State<PlantillasScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(p['titulo']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                        child: Text(p['categoria']!, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0369A1))),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+                  Text(p['titulo']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 8),
                   Text(p['cuerpo']!, style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.copy, size: 14),
-                      label: const Text('Copiar Plantilla', style: TextStyle(fontSize: 12)),
+                      label: const Text('Copiar'),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: p['cuerpo']!));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Plantilla "${p['titulo']}" copiada al portapapeles.')),
+                          SnackBar(content: Text('Plantilla copiada')),
                         );
                       },
                     ),

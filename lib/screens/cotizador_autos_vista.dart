@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/cotizador_pdf_service.dart';
 
 class CotizadorAutosVista extends StatefulWidget {
@@ -43,16 +43,6 @@ class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
       'gm': '\$300,000 MXN',
       'primaNeta': 11900.0,
       'derechoPoliza': 620.0,
-    },
-    {
-      'aseguradora': 'Mapfre',
-      'paquete': 'Tú Eliges Más',
-      'deducibleDM': '5% Deducible',
-      'deducibleRT': '10% Robo Total',
-      'rc': '\$3,000,000 MXN',
-      'gm': '\$200,000 MXN',
-      'primaNeta': 12800.0,
-      'derechoPoliza': 680.0,
     },
   ];
 
@@ -124,45 +114,6 @@ class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
             ],
           ),
           const SizedBox(height: 18),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _clienteCtrl,
-                      decoration: const InputDecoration(labelText: 'Nombre del Cliente / Prospecto', border: OutlineInputBorder(), isDense: true),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _vehiculoCtrl,
-                      decoration: const InputDecoration(labelText: 'Descripción del Vehículo / Modelo', border: OutlineInputBorder(), isDense: true),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _cantidadOpciones,
-                      decoration: const InputDecoration(labelText: 'Opciones a comparar', border: OutlineInputBorder(), isDense: true),
-                      items: const [
-                        DropdownMenuItem(value: 2, child: Text('2 Opciones')),
-                        DropdownMenuItem(value: 3, child: Text('3 Opciones')),
-                        DropdownMenuItem(value: 4, child: Text('4 Opciones')),
-                      ],
-                      onChanged: (v) => setState(() => _cantidadOpciones = v!),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(_cantidadOpciones, (i) {
@@ -184,53 +135,18 @@ class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
                       Text(op['aseguradora'].toString(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                       Text(op['paquete'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFF0284C7), fontWeight: FontWeight.w600)),
                       const Divider(height: 20),
-                      _fila('Daños Materiales', op['deducibleDM'].toString()),
-                      _fila('Robo Total', op['deducibleRT'].toString()),
-                      _fila('Responsabilidad Civil', op['rc'].toString()),
-                      _fila('Gastos Médicos', op['gm'].toString()),
+                      Text('Daños: ${op['deducibleDM']}', style: const TextStyle(fontSize: 11)),
+                      Text('Robo: ${op['deducibleRT']}', style: const TextStyle(fontSize: 11)),
+                      Text('RC: ${op['rc']}', style: const TextStyle(fontSize: 11)),
+                      Text('GM: ${op['gm']}', style: const TextStyle(fontSize: 11)),
                       const SizedBox(height: 12),
-                      TextField(
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Prima Neta Anual (\$ MXN)', border: OutlineInputBorder(), isDense: true),
-                        controller: TextEditingController(text: (op['primaNeta'] as double).toStringAsFixed(0)),
-                        onChanged: (val) {
-                          final n = double.tryParse(val);
-                          if (n != null) setState(() => op['primaNeta'] = n);
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8)),
-                        child: Column(
-                          children: [
-                            Text('\$ ${calc['anual']!.toStringAsFixed(2)} MXN', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
-                            const Divider(height: 12),
-                            _fila('Semestral (x2):', '\$ ${calc['semestral']!.toStringAsFixed(2)}'),
-                            _fila('Trimestral (x4):', '\$ ${calc['trimestral']!.toStringAsFixed(2)}'),
-                            _fila('Mensual (x12):', '\$ ${calc['mensual']!.toStringAsFixed(2)}'),
-                          ],
-                        ),
-                      ),
+                      Text('Total Anual: \$ ${calc['anual']!.toStringAsFixed(2)} MXN', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                     ],
                   ),
                 ),
               );
             }),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _fila(String etiqueta, String valor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(etiqueta, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-          Text(valor, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
         ],
       ),
     );
