@@ -35,7 +35,7 @@ class _ReportesCobranzaVistaState extends State<ReportesCobranzaVista> {
   int _paginaActual = 1;
 
   // Datos simulados estructurados según tu Google Sheet / Captura
-  final List> _registros = [
+final List> _registros = [
     {
       'poliza': '0044634A-18',
       'endoso': '',
@@ -525,8 +525,7 @@ class _ReportesCobranzaVistaState extends State<ReportesCobranzaVista> {
     );
   }
 
-  Widget _dropdownFiltro(String label, String valorActual, List<String> opciones, ValueChanged<String?> onChanged) {
-    return Column(
+ Widget _dropdownFiltro(String label, String valorActual, List<String> opciones, ValueChanged<String?> onChanged) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
