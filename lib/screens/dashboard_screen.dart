@@ -35,23 +35,24 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Inicia directamente en el DASHBOARD ejecutivo con métricas
   String _seccionActiva = 'DASHBOARD';
   List<PolizaModel> _polizas = [];
   String _busquedaGlobal = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
+  // Menú limpio y profesional: sin About ni App Gallery
   final List<MenuItemModel> _menuItems = const [
     MenuItemModel(titulo: 'DASHBOARD', icono: Icons.dashboard_outlined),
     MenuItemModel(titulo: 'CALENDARIO', icono: Icons.calendar_month_outlined),
     MenuItemModel(titulo: 'PROSPECTOS & TARJETAS', icono: Icons.badge_outlined),
     MenuItemModel(titulo: 'AUDITORÍA CONTRATANTES', icono: Icons.checklist_rtl_outlined),
     MenuItemModel(titulo: 'REPORTES COBRANZA', icono: Icons.insert_chart_outlined),
-    MenuItemModel(titulo: 'CARGAR CON IA', icono: Icons.auto_awesome),
-    MenuItemModel(titulo: 'BUSCADOR', icono: Icons.manage_search),
     MenuItemModel(titulo: 'PÓLIZAS', icono: Icons.description_outlined),
     MenuItemModel(titulo: 'COBRANZA', icono: Icons.account_balance_wallet_outlined),
-    MenuItemModel(titulo: 'COTIZADOR AUTOS', icono: Icons.directions_car),
+    MenuItemModel(titulo: 'COTIZADOR AUTOS', icono: Icons.directions_car_outlined),
     MenuItemModel(titulo: 'COTIZADOR GMM', icono: Icons.health_and_safety_outlined),
+    MenuItemModel(titulo: 'CARGAR CON IA', icono: Icons.auto_awesome),
     MenuItemModel(titulo: 'PLANTILLAS', icono: Icons.message_outlined),
     MenuItemModel(titulo: 'CONFIGURACIÓN', icono: Icons.palette_outlined),
   ];
@@ -186,7 +187,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 8),
                   _campoModal('Correo Cobranza (CC)', cobranza),
                   const SizedBox(height: 16),
-                  const Text('Paletas de Color (Adaptables al Logo):', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const Text('Paletas de Color:', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 10,
@@ -308,7 +309,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             borderRadius: BorderRadius.circular(14),
             side: BorderSide(color: conf.colorAcento, width: 1),
           ),
-          title: const Text('Gestión de Cobranza y Atención', style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: const Text('Gestión de Cobranza y Notificación', style: TextStyle(color: Colors.white, fontSize: 16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
