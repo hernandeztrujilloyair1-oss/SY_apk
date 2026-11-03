@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'auditoria_portales_vista.dart';
 import '../models/poliza_model.dart';
 import '../services/api_service.dart';
 import '../services/empresa_config_service.dart';
@@ -601,6 +601,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 'AUDITORÍA CONTRATANTES':
         return const ReporteContratantesVista();
       case 'REPORTES COBRANZA':
+      case 'AUDITORÍA CONTRATANTES':
+  return const AuditoriaPortalesVista();
         return const ReportesCobranzaVista();
       case 'COTIZADOR AUTOS':
         return const CotizadorAutosVista();
