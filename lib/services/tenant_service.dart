@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class EmpresaTenant {
   final String idEmpresa;
@@ -11,6 +9,9 @@ class EmpresaTenant {
   final String correoContacto;
   final String correoCobranza;
   final String logoUrl;
+  final String tipoAlmacenamiento;
+  final double cuotaTotalGb;
+  double almacenamientoUsadoGb;
 
   EmpresaTenant({
     required this.idEmpresa,
@@ -21,7 +22,16 @@ class EmpresaTenant {
     required this.correoContacto,
     required this.correoCobranza,
     required this.logoUrl,
+    required this.tipoAlmacenamiento,
+    required this.cuotaTotalGb,
+    this.almacenamientoUsadoGb = 0.0,
   });
+
+  bool get esWorkspacePropio => tipoAlmacenamiento == 'WORKSPACE_PROPIO';
+  double get porcentajeUso =>
+      cuotaTotalGb > 0 ? (almacenamientoUsadoGb / cuotaTotalGb).clamp(0.0, 1.0) : 0.0;
+  double get espacioDisponibleGb =>
+      (cuotaTotalGb - almacenamientoUsadoGb).clamp(0.0, cuotaTotalGb);
 
   factory EmpresaTenant.enfoqueSeguro() {
     return EmpresaTenant(
@@ -33,19 +43,25 @@ class EmpresaTenant {
       correoContacto: 'direccion@enfoqueseguro.mx',
       correoCobranza: 'cobranza@enfoqueseguro.mx',
       logoUrl: 'https://enfoqueseguro.mx/logo.png',
+      tipoAlmacenamiento: 'WORKSPACE_PROPIO',
+      cuotaTotalGb: 5000.0,
+      almacenamientoUsadoGb: 34.2,
     );
   }
 
-  factory EmpresaTenant.fromJson(String id, Map<String, dynamic> json) {
+  factory EmpresaTenant.planBasico(String id, String nombreDespacho) {
     return EmpresaTenant(
       idEmpresa: id,
-      nombre: json['nombre'] ?? 'Despacho de Seguros',
-      lema: json['lema'] ?? '',
-      colorPrimario: Color(int.parse((json['colorPrimario'] ?? '#091428').replaceAll('#', '0xFF'))),
-      colorAcento: Color(int.parse((json['colorAcento'] ?? '#D4AF37').replaceAll('#', '0xFF'))),
-      correoContacto: json['correoContacto'] ?? '',
-      correoCobranza: json['correoCobranza'] ?? '',
-      logoUrl: json['logoUrl'] ?? '',
+      nombre: nombreDespacho,
+      lema: 'Despacho Afiliado a Plataforma SaaS',
+      colorPrimario: const Color(0xFF1E3A8A),
+      colorAcento: const Color(0xFF38BDF8),
+      correoContacto: 'contacto@${id.toLowerCase()}.com',
+      correoCobranza: 'cobranza@${id.toLowerCase()}.com',
+      logoUrl: '',
+      tipoAlmacenamiento: 'SAAS_CENTRALIZADO',
+      cuotaTotalGb: 250.0,
+      almacenamientoUsadoGb: 12.8,
     );
   }
 }
@@ -58,27 +74,25 @@ class TenantService extends ChangeNotifier {
   EmpresaTenant _empresaActiva = EmpresaTenant.enfoqueSeguro();
   EmpresaTenant get empresaActiva => _empresaActiva;
 
-  // Catálogo de empresas contratantes disponibles en el login
-  final List> empresasDisponibles = [
-    {'id': 'EMP_ENFOQUE', 'nombre': 'Enfoque Seguro'},
-    {'id': 'EMP_BRITO', 'nombre': 'Brito Patrimonial'},
+  final List> empresasDisponibles = const [
+    {'id': 'EMP_ENFOQUE', 'nombre': 'Enfoque Seguro (Workspace 5 TB)'},
+    {'id': 'EMP_BRITO', 'nombre': 'Brito Patrimonial (Plan Básico 250 GB)'},
+    {'id': 'EMP_CENTRO', 'nombre': 'Asesores del Centro (Plan Básico 250 GB)'},
   ];
 
   void cambiarEmpresa(String idEmpresa) {
     if (idEmpresa == 'EMP_ENFOQUE') {
       _empresaActiva = EmpresaTenant.enfoqueSeguro();
+    } else if (idEmpresa == 'EMP_BRITO') {
+      _empresaActiva = EmpresaTenant.planBasico('EMP_BRITO', 'Brito Patrimonial');
     } else {
-      _empresaActiva = EmpresaTenant(
-        idEmpresa: idEmpresa,
-        nombre: 'Brito Patrimonial',
-        lema: 'Seguridad y Confianza Familiar',
-        colorPrimario: const Color(0xFF1E3A8A),
-        colorAcento: const Color(0xFF38BDF8),
-        correoContacto: 'contacto@britopatrimonial.mx',
-        correoCobranza: 'cobranza@britopatrimonial.mx',
-        logoUrl: 'https://britopatrimonial.mx/logo.png',
-      );
+      _empresaActiva = EmpresaTenant.planBasico(idEmpresa, 'Asesores del Centro');
     }
+    notifyListeners();
+  }
+
+  void actualizarConsumo(double nuevosGbUsados) {
+    _empresaActiva.almacenamientoUsadoGb = nuevosGbUsados;
     notifyListeners();
   }
 }
