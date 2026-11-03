@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/aseguradora_model.dart';
 import '../services/cotizador_autos_service.dart';
+import '../services/cotizador_pdf_service.dart';
 
 class CotizadorAutosVista extends StatefulWidget {
   const CotizadorAutosVista({super.key});
@@ -10,113 +11,123 @@ class CotizadorAutosVista extends StatefulWidget {
 }
 
 class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
-  final _primaCtrl = TextEditingController(text: '7500');
-  final _derechoCtrl = TextEditingController(text: '650');
-  AseguradoraInfo _aseguradora = CatalogoAseguradoras.autos.first;
-  CotizacionAutoResultado? _resultado;
-
-  @override
-  void initState() {
-    super.initState();
-    _calcular();
-  }
-
-  void _calcular() {
-    final neta = double.tryParse(_primaCtrl.text) ?? 0.0;
-    final derecho = double.tryParse(_derechoCtrl.text) ?? 0.0;
-    setState(() {
-      _resultado = CotizadorAutosService.cotizar(primaNeta: neta, derechoPoliza: derecho);
-    });
-  }
+  final _clienteCtrl = TextEditingController(text: 'CLIENTE PROSPECTO');
+  final _vehiculoCtrl = TextEditingController(text: 'SEDAN 2024');
+  int _cantidadOpciones = 3; // 2, 3 o 4 opciones
+  final List> _opciones = [
+    {'aseguradora': 'Quálitas', 'neta': 12500.0, 'dedDM': '5%', 'dedRT': '10%'},
+    {'aseguradora': 'Mapfre', 'neta': 11800.0, 'dedDM': '5%', 'dedRT': '10%'},
+    {'aseguradora': 'AXA Seguros', 'neta': 13200.0, 'dedDM': '5%', 'dedRT': '10%'},
+    {'aseguradora': 'GNP Seguros', 'neta': 14100.0, 'dedDM': '5%', 'dedRT': '10%'},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Cotizador de Autos - Cobertura Amplia', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF091428))),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Comparador Multi-Aseguradora (Autos)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F172A),
+                  foregroundColor: const Color(0xFFD4AF37),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                icon: const Icon(Icons.picture_as_pdf, size: 18),
+                label: const Text('DESCARGAR COMPARATIVA EN PDF (1-2 PÁG)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  final selec = _opciones.take(_cantidadOpciones).map((op) {
+                    final res = CotizadorAutosService.cotizar(primaNeta: op['neta'] as double);
+                    return {
+                      'aseguradora': op['aseguradora'],
+                      'deducibleDM': op['dedDM'],
+                      'deducibleRT': op['dedRT'],
+                      'anual': res.primaTotalAnual.toStringAsFixed(2),
+                      'semestral': res.pagoSemestral.toStringAsFixed(2),
+                      'trimestral': res.pagoTrimestral.toStringAsFixed(2),
+                      'mensual': res.pagoMensual.toStringAsFixed(2),
+                    };
+                  }).toList();
+
+                  CotizadorPdfService.imprimirPropuesta(
+                    cliente: _clienteCtrl.text,
+                    tipoBien: _vehiculoCtrl.text,
+                    opcionesSeleccionadas: selec,
+                  );
+                },
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
+              child: Row(
                 children: [
-                  DropdownButtonFormField<AseguradoraInfo>(
-                    initialValue: _aseguradora,
-                    decoration: const InputDecoration(labelText: 'Aseguradora', border: OutlineInputBorder()),
-                    items: CatalogoAseguradoras.autos.map((a) {
-                      return DropdownMenuItem(
-                        value: a,
-                        child: Row(
-                          children: [
-                            Image.network(
-                              a.logoUrl,
-                              width: 24,
-                              height: 24,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.business, size: 20, color: Colors.grey),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(a.nombre, style: const TextStyle(fontSize: 13)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (v) => setState(() => _aseguradora = v!),
+                  Expanded(
+                    child: TextField(
+                      controller: _clienteCtrl,
+                      decoration: const InputDecoration(labelText: 'Nombre del Cliente', border: OutlineInputBorder()),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _primaCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Prima Neta (\$ MXN)', border: OutlineInputBorder()),
-                    onChanged: (_) => _calcular(),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: TextField(
+                      controller: _vehiculoCtrl,
+                      decoration: const InputDecoration(labelText: 'Vehículo / Modelo / Año', border: OutlineInputBorder()),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _derechoCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Derecho de Póliza (\$ MXN)', border: OutlineInputBorder()),
-                    onChanged: (_) => _calcular(),
+                  const SizedBox(width: 14),
+                  DropdownButton<int>(
+                    value: _cantidadOpciones,
+                    items: const [
+                      DropdownMenuItem(value: 2, child: Text('2 Opciones a Enviar')),
+                      DropdownMenuItem(value: 3, child: Text('3 Opciones a Enviar')),
+                      DropdownMenuItem(value: 4, child: Text('4 Opciones a Enviar')),
+                    ],
+                    onChanged: (v) => setState(() => _cantidadOpciones = v!),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 20),
-          if (_resultado != null) ...[
-            _tarjetaResumen('Prima Total Anual', '\$ ${_resultado!.primaTotalAnual.toStringAsFixed(2)} MXN', const Color(0xFF047857), true),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: _tarjetaResumen('Semestral (x2)', '\$ ${_resultado!.pagoSemestral.toStringAsFixed(2)}', const Color(0xFF0284C7), false)),
-                const SizedBox(width: 8),
-                Expanded(child: _tarjetaResumen('Trimestral (x4)', '\$ ${_resultado!.pagoTrimestral.toStringAsFixed(2)}', const Color(0xFFD97706), false)),
-                const SizedBox(width: 8),
-                Expanded(child: _tarjetaResumen('Mensual (x12)', '\$ ${_resultado!.pagoMensual.toStringAsFixed(2)}', const Color(0xFF7C3AED), false)),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _tarjetaResumen(String titulo, String monto, Color color, bool grande) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: grande ? 18 : 12, horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(titulo, style: TextStyle(color: Colors.black54, fontSize: grande ? 13 : 11)),
-          const SizedBox(height: 4),
-          Text(monto, style: TextStyle(color: color, fontSize: grande ? 20 : 13, fontWeight: FontWeight.bold)),
+          // Tablas comparativas dinámicas
+          Row(
+            children: List.generate(_cantidadOpciones, (i) {
+              final op = _opciones[i];
+              final res = CotizadorAutosService.cotizar(primaNeta: op['neta'] as double);
+              return Expanded(
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: i == 0 ? const Color(0xFFD4AF37) : const Color(0xFFE2E8F0), width: i == 0 ? 2 : 1),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(op['aseguradora'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Divider(),
+                      Text('Prima Total Anual', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text('\$ ${res.primaTotalAnual.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                      const SizedBox(height: 10),
+                      Text('Semestral: \$ ${res.pagoSemestral.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                      Text('Trimestral: \$ ${res.pagoTrimestral.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                      Text('Mensual: \$ ${res.pagoMensual.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          )
         ],
       ),
     );
