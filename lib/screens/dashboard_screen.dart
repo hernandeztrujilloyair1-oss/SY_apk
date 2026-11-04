@@ -6,6 +6,7 @@ import 'login_screen.dart';
 import 'auditoria_portales_vista.dart';
 import 'campanas_correo_vista.dart';
 import 'configuracion_marca_blanca_vista.dart';
+import 'cobranza_seguimiento_vista.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -388,7 +389,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     switch (_seccionActiva) {
       case 'DASHBOARD':
         return _construirDashboardPrincipal();
-
+case 'COBRANZA':
+  return const CobranzaSeguimientoVista();
       case 'AUDITORÍA CONTRATANTES':
         return const AuditoriaPortalesVista();
 

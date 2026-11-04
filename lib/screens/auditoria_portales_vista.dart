@@ -13,7 +13,7 @@ class AuditoriaPortalesVista extends StatefulWidget {
 class _AuditoriaPortalesVistaState extends State<AuditoriaPortalesVista> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _endpointCtrl = TextEditingController(
-    text: 'https://script.google.com/macros/s/AKfycbxmXW6-mJEY9RZSIkOhB-aVyW1sj8UwuF73lK16-Qb7Rh4PB93ZOsCORhLeIG8gZQ0/exec',
+    text: 'https://script.google.com/macros/s/AKfycbx0_EtCpa4kd4xWQ3exYT_18PH6YXhEcAUgWxl0h242elBfzs5WUiaEmuueJRLfDHSg/exec',
   );
 
   bool _cargando = false;

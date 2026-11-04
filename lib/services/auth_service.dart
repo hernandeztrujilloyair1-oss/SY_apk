@@ -38,7 +38,7 @@ class AuthService extends ChangeNotifier {
   bool get estaAutenticado => _usuarioActual != null;
 
   final String endpointAppsScript =
-      'https://script.google.com/macros/s/AKfycbxmXW6-mJEY9RZSIkOhB-aVyW1sj8UwuF73lK16-Qb7Rh4PB93ZOsCORhLeIG8gZQ0/exec';
+      'https://script.google.com/macros/s/AKfycbx0_EtCpa4kd4xWQ3exYT_18PH6YXhEcAUgWxl0h242elBfzs5WUiaEmuueJRLfDHSg/exec';
 
   Future<bool> iniciarSesion(String correo, String password) async {
     final mail = correo.trim().toLowerCase();

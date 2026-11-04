@@ -21,7 +21,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
   bool _filtroFeriados = true;
 
   // Base de tareas y pendientes interactiva
-  final Map<String, List>> _pendientesPorFecha = {
+  Map<String, List>> _pendientesPorFecha = {
     '2026-11-03': [
       {
         'tipo': 'Cobranza',
