@@ -14,7 +14,7 @@ class _CampanasCorreoVistaState extends State<CampanasCorreoVista> with SingleTi
   late TabController _tabController;
 
   final TextEditingController _endpointCtrl = TextEditingController(
-    text: 'https://script.google.com/macros/s/AKfycbx0_EtCpa4kd4xWQ3exYT_18PH6YXhEcAUgWxl0h242elBfzs5WUiaEmuueJRLfDHSg/exec',
+    text: 'https://script.google.com/macros/s/AKfycbxB8tIpHMZEqV8obZ7PmYidn-sZM5jFcvsqIR4KHXFBPpCfZ0hfAYF5WPnlDYwLEy4/exec',
   );
 
   final TextEditingController _asuntoCtrl = TextEditingController(text: 'Información Importante sobre su Cobertura - {COMPANIA}');
