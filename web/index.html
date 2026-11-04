@@ -1,46 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Enfoque Seguro | Portal Operativo y Cobranza">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="sy_soluciones">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>sy_soluciones</title>
+  <meta name="apple-mobile-web-app-title" content="Enfoque Seguro">
+  <title>Enfoque Seguro | Portal Operativo</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #091428;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #D4AF37;
+      font-family: Arial, sans-serif;
+    }
+    .loading-container {
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid rgba(212, 175, 55, 0.2);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border-left-color: #D4AF37;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div class="loading-container" id="app-loading">
+    <div class="spinner"></div>
+    <div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">ENFOQUE SEGURO</div>
+    <div style="font-size: 11px; color: #94A3B8; margin-top: 6px;">Cargando sistema...</div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
