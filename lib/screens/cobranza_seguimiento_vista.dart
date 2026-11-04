@@ -14,13 +14,12 @@ class CobranzaSeguimientoVista extends StatefulWidget {
 class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
   bool _cargando = false;
   String _filtroSeguimiento = 'TODOS';
-  int _filtroDiasAtraso = 0; // 0 = Sin límite
+  int _filtroDiasAtraso = 0;
   String _busqueda = '';
 
-  List> _registros = [];
+  List<Map<String, dynamic>> _registros = [];
 
-  // Datos base tomados del Sheet mientras carga o si opera offline
-  final List> _datosDefault = [
+  final List<Map<String, dynamic>> _datosDefault = [
     {
       'poliza': '4112500270025',
       'titular': 'SUAJES Y PREPARACIONES DIVISION BAJIO SA DE CV',
@@ -84,7 +83,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
 
     try {
       final uri = Uri.parse(
-        '${ApiConfig.appsScriptUrl}?accion=OBTENER_COBRANZA_SEGUIMIENTO&id_empresa=${tenant.idEmpresa}',
+        ApiConfig.appsScriptUrl + '?accion=OBTENER_COBRANZA_SEGUIMIENTO&id_empresa=' + tenant.idEmpresa,
       );
       final res = await http.get(uri);
 
@@ -97,7 +96,6 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
         }
       }
     } catch (_) {
-      // Mantiene datos locales en caso de desconexión momentánea
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -126,15 +124,15 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
   Color _obtenerColorSeguimiento(String estatus) {
     switch (estatus.toUpperCase()) {
       case 'REQUIERE ATENCIÓN URGENTE':
-        return const Color(0xFFDC2626); // Rojo Alerta
+        return const Color(0xFFDC2626);
       case '3°':
-        return const Color(0xFFEA580C); // Naranja Intenso
+        return const Color(0xFFEA580C);
       case '2°':
-        return const Color(0xFFD97706); // Ámbar
+        return const Color(0xFFD97706);
       case '1°':
-        return const Color(0xFF0284C7); // Azul Informativo
+        return const Color(0xFF0284C7);
       case 'LIQUIDADA':
-        return const Color(0xFF16A34A); // Verde Exitoso
+        return const Color(0xFF16A34A);
       default:
         return const Color(0xFF64748B);
     }
@@ -144,7 +142,6 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
   Widget build(BuildContext context) {
     final tenant = TenantService().empresaActiva;
 
-    // Filtros en memoria
     final filtrados = _registros.where((r) {
       final q = _busqueda.toLowerCase();
       final matchText = r['poliza'].toString().toLowerCase().contains(q) ||
@@ -177,7 +174,6 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabecera Institucional
             Row(
               children: [
                 CircleAvatar(
@@ -191,16 +187,9 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                   children: [
                     Text(
                       'Cobranza Activa & Seguimiento Directo',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        color: tenant.colorPrimario,
-                      ),
+                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: tenant.colorPrimario),
                     ),
-                    const Text(
-                      'Sincronizado con el libro maestro: 1162x382qGfBC-PSMEP9dDSaBukBsr_cOaAjZbcdThXs[cite: 2.2]',
-                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                    ),
+                    const Text('Sincronizado con: 1162x382qGfBC-PSMEP9dDSaBukBsr_cOaAjZbcdThXs', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
                   ],
                 ),
                 const Spacer(),
@@ -214,30 +203,21 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
               ],
             ),
             const SizedBox(height: 18),
-
-            // Tarjetas KPI de Estado de Cobranza
             Row(
               children: [
-                _kpiMini('Monto Cartera en Riesgo', '\$ ${sumaPrimas.toStringAsFixed(2)} MXN', Icons.attach_money, const Color(0xFF0F172A)),
+                _kpiMini('Monto Cartera en Riesgo', r'$ ' + sumaPrimas.toStringAsFixed(2) + ' MXN', Icons.attach_money, const Color(0xFF0F172A)),
                 const SizedBox(width: 12),
-                _kpiMini('Requiere Atención Urgente', '$urgentes Casos', Icons.error_outline_rounded, const Color(0xFFDC2626)),
+                _kpiMini('Requiere Atención Urgente', urgentes.toString() + ' Casos', Icons.error_outline_rounded, const Color(0xFFDC2626)),
                 const SizedBox(width: 12),
-                _kpiMini('Pólizas Liquidadas', '$liquidadas', Icons.check_circle_outline_rounded, const Color(0xFF16A34A)),
+                _kpiMini('Pólizas Liquidadas', liquidadas.toString(), Icons.check_circle_outline_rounded, const Color(0xFF16A34A)),
               ],
             ),
             const SizedBox(height: 18),
-
-            // Barra de Filtros (Estilo Google Sheets)
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
               child: Row(
                 children: [
-                  // Buscador
                   Expanded(
                     flex: 3,
                     child: TextField(
@@ -253,8 +233,6 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                     ),
                   ),
                   const SizedBox(width: 12),
-
-                  // Filtro por Estado de Seguimiento
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<String>(
@@ -272,13 +250,11 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                     ),
                   ),
                   const SizedBox(width: 12),
-
-                  // Filtro de Días de Atraso
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<int>(
                       value: _filtroDiasAtraso,
-                      decoration: const InputDecoration(labelText: 'Filtrar Atraso (días)[cite: 2.2]', border: OutlineInputBorder(), isDense: true),
+                      decoration: const InputDecoration(labelText: 'Filtrar Atraso (días)', border: OutlineInputBorder(), isDense: true),
                       items: const [
                         DropdownMenuItem(value: 0, child: Text('Sin filtro (Todos)')),
                         DropdownMenuItem(value: 15, child: Text('Hasta 15 días')),
@@ -292,15 +268,9 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
               ),
             ),
             const SizedBox(height: 14),
-
-            // Tabla de Seguimiento
             Expanded(
               child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
                 child: filtrados.isEmpty
                     ? const Center(child: Text('No hay registros de cobranza con los filtros seleccionados.', style: TextStyle(color: Color(0xFF94A3B8))))
                     : SingleChildScrollView(
@@ -325,7 +295,6 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                               final int dias = (it['diasAtraso'] as num?)?.toInt() ?? 0;
 
                               return DataRow(cells: [
-                                // Badge de Estado
                                 DataCell(
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -334,10 +303,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(color: colorSeg.withOpacity(0.4)),
                                     ),
-                                    child: Text(
-                                      segActual,
-                                      style: TextStyle(color: colorSeg, fontWeight: FontWeight.w800, fontSize: 10),
-                                    ),
+                                    child: Text(segActual, style: TextStyle(color: colorSeg, fontWeight: FontWeight.w800, fontSize: 10)),
                                   ),
                                 ),
                                 DataCell(Text(it['poliza'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
@@ -352,11 +318,11 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                                   ),
                                 ),
                                 DataCell(Text(it['compania'].toString(), style: const TextStyle(fontSize: 11))),
-                                DataCell(Text('\$ ${(it['primaTotal'] as num).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
+                                DataCell(Text(r'$ ' + (it['primaTotal'] as num).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11))),
                                 DataCell(Text(it['proximoPago'].toString(), style: const TextStyle(fontSize: 11))),
                                 DataCell(
                                   Text(
-                                    '$dias días',
+                                    dias.toString() + ' días',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 11,
@@ -364,7 +330,6 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                                     ),
                                   ),
                                 ),
-                                // Selector rápido para actualizar estatus
                                 DataCell(
                                   PopupMenuButton<String>(
                                     tooltip: 'Cambiar Estatus',
@@ -396,17 +361,10 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
         child: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.12),
-              child: Icon(icono, color: color, size: 18),
-            ),
+            CircleAvatar(backgroundColor: color.withOpacity(0.12), child: Icon(icono, color: color, size: 18)),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

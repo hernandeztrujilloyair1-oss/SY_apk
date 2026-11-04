@@ -1,4 +1,4 @@
-import \'package:flutter/material.dart\';
+import 'package:flutter/material.dart';
 
 class EmpresaTenant {
   final String idEmpresa;
@@ -48,22 +48,6 @@ class EmpresaTenant {
       almacenamientoUsadoGb: 34.2,
     );
   }
-
-  factory EmpresaTenant.planBasico(String id, String nombreDespacho) {
-    return EmpresaTenant(
-      idEmpresa: id,
-      nombre: nombreDespacho,
-      lema: 'Despacho Afiliado a Plataforma SaaS',
-      colorPrimario: const Color(0xFF1E3A8A),
-      colorAcento: const Color(0xFF38BDF8),
-      correoContacto: 'contacto@' + id.toLowerCase() + '.com',
-      correoCobranza: 'cobranza@' + id.toLowerCase() + '.com',
-      logoUrl: '',
-      tipoAlmacenamiento: 'SAAS_CENTRALIZADO',
-      cuotaTotalGb: 250.0,
-      almacenamientoUsadoGb: 12.8,
-    );
-  }
 }
 
 class TenantService extends ChangeNotifier {
@@ -74,20 +58,12 @@ class TenantService extends ChangeNotifier {
   EmpresaTenant _empresaActiva = EmpresaTenant.enfoqueSeguro();
   EmpresaTenant get empresaActiva => _empresaActiva;
 
-  final List> empresasDisponibles = const [
+  final List<Map<String, String>> empresasDisponibles = const [
     {'id': 'EMP_ENFOQUE', 'nombre': 'Enfoque Seguro (Workspace 5 TB)'},
-    {'id': 'EMP_BRITO', 'nombre': 'Brito Patrimonial (Plan Básico 250 GB)'},
-    {'id': 'EMP_CENTRO', 'nombre': 'Asesores del Centro (Plan Básico 250 GB)'},
   ];
 
   void cambiarEmpresa(String idEmpresa) {
-    if (idEmpresa == 'EMP_ENFOQUE') {
-      _empresaActiva = EmpresaTenant.enfoqueSeguro();
-    } else if (idEmpresa == 'EMP_BRITO') {
-      _empresaActiva = EmpresaTenant.planBasico('EMP_BRITO', 'Brito Patrimonial');
-    } else {
-      _empresaActiva = EmpresaTenant.planBasico(idEmpresa, 'Asesores del Centro');
-    }
+    _empresaActiva = EmpresaTenant.enfoqueSeguro();
     notifyListeners();
   }
 
