@@ -44,6 +44,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
   int _seccionActual = 0;
   bool _cargando = true;
   int _filtroPeriodo = 0;
+  int _tabExpedienteHistorial = 0; // 0: Solo Vigentes/Activas, 1: Pasadas (Renovadas y Canceladas)
 
   List _polizas = [];
   List _recibos = [];
@@ -804,190 +805,282 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
   }
 
   void _abrirExpedienteModal(Map c) {
-    final polizas = c['polizas'] as List;
+    final todasPolizas = (c['polizas'] as List).map((e) => Map.from(e)).toList();
     final nombreCliente = c['nombre'].toString();
 
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Container(
-          width: 950,
-          constraints: const BoxConstraints(maxHeight: 720),
-          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20)]),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                decoration: const BoxDecoration(color: Color(0xFF091428), borderRadius: BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14))),
-                child: Row(
-                  children: [
-                    CircleAvatar(backgroundColor: const Color(0xFFD4AF37), radius: 20, child: Text(nombreCliente.isNotEmpty ? nombreCliente[0].toUpperCase() : 'C', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF091428)))),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(nombreCliente, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                          Text('RFC: ${c['rfc']}  •  Tel: ${c['telefono']}  •  ${c['correo']}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                        ],
-                      ),
-                    ),
-                    IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.of(ctx).pop()),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(18),
-                  itemCount: polizas.length,
-                  itemBuilder: (context, i) {
-                    final p = polizas[i] as Map;
-                    final numPol = (p['No_Poliza'] ?? p['poliza'] ?? '').toString();
-                    final cia = (p['Aseguradora'] ?? p['compania'] ?? 'QUALITAS').toString();
-                    final ramo = (p['Subramo'] ?? p['ramo'] ?? 'Seguro').toString();
-                    final estatus = (p['Estatus'] ?? p['Estatus_Poliza'] ?? 'Vigente').toString();
-                    final vFin = (p['Fin_Vigencia'] ?? p['vigenciaFin'] ?? '').toString();
-                    final prima = double.tryParse((p['Prima_Total'] ?? p['primaTotal'] ?? '0').toString().replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0.0;
-                    final recibosPol = _recibos.where((r) => (r['No_Poliza'] ?? r['poliza'] ?? '').toString() == numPol).toList();
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final vigentes = todasPolizas.where((p) {
+            final est = (p['Estatus'] ?? p['Estatus_Poliza'] ?? '').toString().toLowerCase();
+            return est.contains('vigente') && !est.contains('no renovada');
+          }).toList();
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFCBD5E1))),
-                      child: ExpansionTile(
-                        initiallyExpanded: i == 0,
-                        leading: const Icon(Icons.shield_outlined, color: Color(0xFF091428)),
-                        title: Row(
-                          children: [
-                            Text(numPol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF091428))),
-                            const SizedBox(width: 8),
-                            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: const Color(0xFF091428), borderRadius: BorderRadius.circular(4)), child: Text(cia.toUpperCase(), style: const TextStyle(fontSize: 10, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold))),
-                            const SizedBox(width: 8),
-                            Text(estatus, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: estatus.toLowerCase().contains('vig') ? const Color(0xFF059669) : Colors.red)),
-                          ],
+          final pasadas = todasPolizas.where((p) {
+            final est = (p['Estatus'] ?? p['Estatus_Poliza'] ?? '').toString().toLowerCase();
+            return est.contains('renovada') || est.contains('cancel') || est.contains('vencida') || est.contains('no renovada');
+          }).toList();
+
+          final polizasAMostrar = _tabExpedienteHistorial == 0 ? vigentes : pasadas;
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Container(
+              width: 950,
+              constraints: const BoxConstraints(maxHeight: 740),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20)],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF091428),
+                      borderRadius: BorderRadius.only(topLeft: Radius.circular(14), topRight: Radius.circular(14)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFFD4AF37),
+                          radius: 20,
+                          child: Text(
+                            nombreCliente.isNotEmpty ? nombreCliente[0].toUpperCase() : 'C',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF091428)),
+                          ),
                         ),
-                        subtitle: Text('Ramo: $ramo  •  Vence: $vFin  •  Prima: ${fMoneda.format(prima)}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                        children: [
-                          const Divider(height: 1),
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(nombreCliente, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              Text('RFC: ${c['rfc']}  •  Tel: ${c['telefono']}  •  ${c['correo']}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                            ],
+                          ),
+                        ),
+                        IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.of(ctx).pop()),
+                      ],
+                    ),
+                  ),
+
+                  // SELECTOR: SOLO VIGENTES VS PASADAS (RENOVADAS Y CANCELADAS)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    color: Colors.white,
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () => setModalState(() => _tabExpedienteHistorial = 0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _tabExpedienteHistorial == 0 ? const Color(0xFF059669) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
                               children: [
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF091428), foregroundColor: const Color(0xFFD4AF37), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                                      icon: const Icon(Icons.auto_awesome, size: 14),
-                                      label: const Text('RENOVAR CON IA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                      onPressed: () {
-                                        Navigator.of(ctx).pop();
-                                        _abrirModalIa(polizaOrigen: numPol, contratanteOrigen: nombreCliente, aseguradoraOrigen: cia, rfcOrigen: c['rfc'].toString());
-                                      },
-                                    ),
-                                    OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF091428), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                                      icon: const Icon(Icons.edit_note, size: 14),
-                                      label: const Text('RENOVAR MANUAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                      onPressed: () => _actualizarEstatusPoliza(numPol, 'RENOVACIÓN MANUAL'),
-                                    ),
-                                    TextButton.icon(
-                                      icon: const Icon(Icons.pause_circle_outline, size: 14, color: Colors.orange),
-                                      label: const Text('PAUSAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                      onPressed: () => _actualizarEstatusPoliza(numPol, 'PAUSADA'),
-                                    ),
-                                    TextButton.icon(
-                                      icon: const Icon(Icons.play_circle_outline, size: 14, color: Colors.green),
-                                      label: const Text('ACTIVAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green)),
-                                      onPressed: () => _actualizarEstatusPoliza(numPol, 'ACTIVA'),
-                                    ),
-                                    TextButton.icon(
-                                      icon: const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
-                                      label: const Text('CANCELAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red)),
-                                      onPressed: () => _actualizarEstatusPoliza(numPol, 'CANCELADA'),
-                                    ),
-                                  ],
+                                Icon(Icons.verified_user_outlined, size: 16, color: _tabExpedienteHistorial == 0 ? Colors.white : const Color(0xFF091428)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'PÓLIZAS VIGENTES (${vigentes.length})',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: _tabExpedienteHistorial == 0 ? Colors.white : const Color(0xFF091428)),
                                 ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                                        child: const Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('ENDOSOS REGISTRADOS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF091428))),
-                                            SizedBox(height: 2),
-                                            Text('Sin endosos modificatorios activos.', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFFECACA))),
-                                        child: const Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('SINIESTROS REPORTADOS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red)),
-                                            SizedBox(height: 2),
-                                            Text('0 siniestros abiertos. Expediente limpio.', style: TextStyle(fontSize: 10, color: Color(0xFF991B1B))),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                const Text('HISTÓRICO DE RECIBOS Y PAGOS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF091428))),
-                                const SizedBox(height: 6),
-                                if (recibosPol.isEmpty)
-                                  const Text('No hay recibos pendientes en este ciclo.', style: TextStyle(fontSize: 11, color: Color(0xFF64748B)))
-                                else
-                                  Table(
-                                    border: TableBorder.all(color: const Color(0xFFCBD5E1)),
-                                    children: [
-                                      const TableRow(
-                                        decoration: BoxDecoration(color: Color(0xFFF1F5F9)),
-                                        children: [
-                                          Padding(padding: EdgeInsets.all(5), child: Text('Serie', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF091428)))),
-                                          Padding(padding: EdgeInsets.all(5), child: Text('Vencimiento', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF091428)))),
-                                          Padding(padding: EdgeInsets.all(5), child: Text('Importe', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF091428)))),
-                                          Padding(padding: EdgeInsets.all(5), child: Text('Aviso', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF091428)))),
-                                        ],
-                                      ),
-                                      ...recibosPol.map((r) {
-                                        final imp = double.tryParse((r['Prima_Total'] ?? r['Importe_Total'] ?? '0').toString().replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0.0;
-                                        return TableRow(
-                                          children: [
-                                            Padding(padding: const EdgeInsets.all(5), child: Text((r['Serie_Recibo'] ?? '1/1').toString(), style: const TextStyle(fontSize: 10, color: Color(0xFF091428)))),
-                                            Padding(padding: const EdgeInsets.all(5), child: Text((r['Fecha_Limite_Pago'] ?? '').toString(), style: const TextStyle(fontSize: 10, color: Color(0xFF091428)))),
-                                            Padding(padding: const EdgeInsets.all(5), child: Text(fMoneda.format(imp), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF091428)))),
-                                            Padding(padding: const EdgeInsets.all(5), child: Text((r['Aviso_Seguimiento'] ?? 'AL CORRIENTE').toString(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF091428)))),
-                                          ],
-                                        );
-                                      }),
-                                    ],
-                                  ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                        const SizedBox(width: 12),
+                        InkWell(
+                          onTap: () => setModalState(() => _tabExpedienteHistorial = 1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _tabExpedienteHistorial == 1 ? const Color(0xFF091428) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.history_outlined, size: 16, color: _tabExpedienteHistorial == 1 ? const Color(0xFFD4AF37) : const Color(0xFF091428)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'HISTÓRICO PASADAS: RENOVADAS / CANCELADAS (${pasadas.length})',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: _tabExpedienteHistorial == 1 ? const Color(0xFFD4AF37) : const Color(0xFF091428)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+
+                  Expanded(
+                    child: polizasAMostrar.isEmpty
+                        ? Center(
+                            child: Text(
+                              _tabExpedienteHistorial == 0
+                                  ? 'Este cliente no cuenta con pólizas vigentes activas.'
+                                  : 'No hay registro de pólizas pasadas o canceladas.',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(18),
+                            itemCount: polizasAMostrar.length,
+                            itemBuilder: (context, i) {
+                              final p = polizasAMostrar[i];
+                              final numPol = (p['No_Poliza'] ?? p['poliza'] ?? '').toString();
+                              final cia = (p['Aseguradora'] ?? p['compania'] ?? 'QUALITAS').toString();
+                              final ramo = (p['Subramo'] ?? p['ramo'] ?? 'Seguro').toString();
+                              final estatus = (p['Estatus'] ?? p['Estatus_Poliza'] ?? 'Vigente').toString();
+                              final vFin = (p['Fin_Vigencia'] ?? p['vigenciaFin'] ?? '').toString();
+                              final prima = double.tryParse((p['Prima_Total'] ?? p['primaTotal'] ?? '0').toString().replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0.0;
+                              final recibosPol = _recibos.where((r) => (r['No_Poliza'] ?? r['poliza'] ?? '').toString() == numPol).toList();
+
+                              final esCancelada = estatus.toLowerCase().contains('cancel');
+                              final esRenovada = estatus.toLowerCase().contains('renov');
+                              final esVig = estatus.toLowerCase().contains('vig');
+
+                              Color badgeColor = const Color(0xFF059669);
+                              if (esCancelada) badgeColor = Colors.red;
+                              if (esRenovada) badgeColor = const Color(0xFF2563EB);
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: esCancelada ? const Color(0xFFFECACA) : const Color(0xFFCBD5E1)),
+                                ),
+                                child: ExpansionTile(
+                                  initiallyExpanded: i == 0,
+                                  leading: Icon(
+                                    esCancelada ? Icons.cancel_outlined : (esRenovada ? Icons.autorenew_outlined : Icons.shield_outlined),
+                                    color: badgeColor,
+                                  ),
+                                  title: Row(
+                                    children: [
+                                      Text(numPol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF091428))),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(color: const Color(0xFF091428), borderRadius: BorderRadius.circular(4)),
+                                        child: Text(cia.toUpperCase(), style: const TextStyle(fontSize: 10, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: badgeColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: badgeColor.withOpacity(0.3)),
+                                        ),
+                                        child: Text(estatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor)),
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Text('Ramo: $ramo  •  Término: $vFin  •  Prima: ${fMoneda.format(prima)}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                  children: [
+                                    const Divider(height: 1),
+                                    Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: [
+                                              ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF091428), foregroundColor: const Color(0xFFD4AF37), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                                icon: const Icon(Icons.auto_awesome, size: 14),
+                                                label: const Text('RENOVAR CON IA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                                onPressed: () {
+                                                  Navigator.of(ctx).pop();
+                                                  _abrirModalIa(polizaOrigen: numPol, contratanteOrigen: nombreCliente, aseguradoraOrigen: cia, rfcOrigen: c['rfc'].toString());
+                                                },
+                                              ),
+                                              OutlinedButton.icon(
+                                                style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF091428), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                                icon: const Icon(Icons.edit_note, size: 14),
+                                                label: const Text('RENOVAR MANUAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                                onPressed: () => _actualizarEstatusPoliza(numPol, 'RENOVACIÓN MANUAL'),
+                                              ),
+                                              TextButton.icon(
+                                                icon: const Icon(Icons.pause_circle_outline, size: 14, color: Colors.orange),
+                                                label: const Text('PAUSAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange)),
+                                                onPressed: () => _actualizarEstatusPoliza(numPol, 'PAUSADA'),
+                                              ),
+                                              TextButton.icon(
+                                                icon: const Icon(Icons.play_circle_outline, size: 14, color: Colors.green),
+                                                label: const Text('ACTIVAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green)),
+                                                onPressed: () => _actualizarEstatusPoliza(numPol, 'ACTIVA'),
+                                              ),
+                                              TextButton.icon(
+                                                icon: const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
+                                                label: const Text('CANCELAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red)),
+                                                onPressed: () => _actualizarEstatusPoliza(numPol, 'CANCELADA'),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 14),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      const Text('ESTADO DOCUMENTAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF091428))),
+                                                      const SizedBox(height: 2),
+                                                      Text(esCancelada ? 'Póliza cancelada en el ejercicio.' : (esRenovada ? 'Renovada y migrada a nuevo ciclo.' : 'Póliza vigente al corriente.'), style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: esCancelada ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: esCancelada ? const Color(0xFFFECACA) : const Color(0xFFA7F3D0)),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(esCancelada ? 'BAJA REGISTRADA' : 'SINIESTROS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: esCancelada ? Colors.red : const Color(0xFF059669))),
+                                                      const SizedBox(height: 2),
+                                                      Text(esCancelada ? 'Cancelación definitiva.' : '0 siniestros abiertos.', style: TextStyle(fontSize: 10, color: esCancelada ? Colors.red : const Color(0xFF059669))),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
