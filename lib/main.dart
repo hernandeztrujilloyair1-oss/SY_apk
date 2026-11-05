@@ -1073,7 +1073,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
     final primaCtrl = TextEditingController(text: op['prima']?.toString() ?? '10000');
     final dedCtrl = TextEditingController(text: (esGmm ? op['deducible'] : op['deducibleDM'])?.toString() ?? '5%');
     final coaseguroRoboCtrl = TextEditingController(text: (esGmm ? op['coaseguro'] : op['deducibleRobo'])?.toString() ?? '10%');
-    final topeRcCtrl = TextEditingController(text: (esGmm ? op['tope'] : op['rcLuc'])?.toString() ?? '$4,000,000');
+    final topeRcCtrl = TextEditingController(text: (esGmm ? op['tope'] : op['rcLuc'])?.toString() ?? '4,000,000');
     final extraCtrl = TextEditingController(text: (esGmm ? op['urgencias'] : op['gastosMedicos'])?.toString() ?? 'Amparado');
 
     showDialog(
@@ -1099,9 +1099,9 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
               children: [
                 TextField(controller: planCtrl, decoration: const InputDecoration(labelText: 'Plan Comercial', border: OutlineInputBorder(), isDense: true)),
                 const SizedBox(height: 12),
-                TextField(controller: primaCtrl, decoration: const InputDecoration(labelText: 'Costo / Prima Neta Anual ($)', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number),
+                TextField(controller: primaCtrl, decoration: const InputDecoration(labelText: 'Costo / Prima Neta Anual (MXN)', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number),
                 const SizedBox(height: 12),
-                TextField(controller: dedCtrl, decoration: InputDecoration(labelText: esGmm ? 'Deducible ($)' : 'Deducible Daños Materiales (%)', border: const OutlineInputBorder(), isDense: true)),
+                TextField(controller: dedCtrl, decoration: InputDecoration(labelText: esGmm ? 'Deducible (MXN)' : 'Deducible Daños Materiales (%)', border: const OutlineInputBorder(), isDense: true)),
                 const SizedBox(height: 12),
                 TextField(controller: coaseguroRoboCtrl, decoration: InputDecoration(labelText: esGmm ? 'Coaseguro (%)' : 'Deducible Robo Total (%)', border: const OutlineInputBorder(), isDense: true)),
                 const SizedBox(height: 12),
