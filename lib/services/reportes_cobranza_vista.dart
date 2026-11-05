@@ -51,7 +51,7 @@ class _ReportesCobranzaVistaState extends State<ReportesCobranzaVista> {
   ];
 
   // Subreportes disponibles para "Pólizas"
-  final List> _reportesPolizas = const [
+  final List> final _reportesPolizas = const [
     {'titulo': 'Listado de pólizas', 'icono': Icons.featured_play_list_outlined, 'id': 'LISTADO_POLIZAS'},
     {'titulo': 'Pólizas con endosos con recibos', 'icono': Icons.receipt_long_outlined, 'id': 'ENDOSOS'},
     {'titulo': 'Renovaciones a 45 días', 'icono': Icons.calendar_month_outlined, 'id': 'RENOVACIONES_45'},
@@ -139,7 +139,7 @@ class _ReportesCobranzaVistaState extends State<ReportesCobranzaVista> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),

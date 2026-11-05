@@ -83,7 +83,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
 
     try {
       final uri = Uri.parse(
-        ApiConfig.appsScriptUrl + '?accion=OBTENER_COBRANZA_SEGUIMIENTO&id_empresa=' + tenant.idEmpresa,
+        '${ApiConfig.appsScriptUrl}?accion=OBTENER_COBRANZA_SEGUIMIENTO&id_empresa=${tenant.idEmpresa}',
       );
       final res = await http.get(uri);
 
@@ -207,7 +207,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
               children: [
                 _kpiMini('Monto Cartera en Riesgo', r'$ ' + sumaPrimas.toStringAsFixed(2) + ' MXN', Icons.attach_money, const Color(0xFF0F172A)),
                 const SizedBox(width: 12),
-                _kpiMini('Requiere Atención Urgente', urgentes.toString() + ' Casos', Icons.error_outline_rounded, const Color(0xFFDC2626)),
+                _kpiMini('Requiere Atención Urgente', '$urgentes Casos', Icons.error_outline_rounded, const Color(0xFFDC2626)),
                 const SizedBox(width: 12),
                 _kpiMini('Pólizas Liquidadas', liquidadas.toString(), Icons.check_circle_outline_rounded, const Color(0xFF16A34A)),
               ],
@@ -236,7 +236,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<String>(
-                      value: _filtroSeguimiento,
+                      initialValue: _filtroSeguimiento,
                       decoration: const InputDecoration(labelText: 'Aviso de Seguimiento', border: OutlineInputBorder(), isDense: true),
                       items: const [
                         DropdownMenuItem(value: 'TODOS', child: Text('Todos los Registros')),
@@ -253,7 +253,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<int>(
-                      value: _filtroDiasAtraso,
+                      initialValue: _filtroDiasAtraso,
                       decoration: const InputDecoration(labelText: 'Filtrar Atraso (días)', border: OutlineInputBorder(), isDense: true),
                       items: const [
                         DropdownMenuItem(value: 0, child: Text('Sin filtro (Todos)')),
@@ -299,9 +299,9 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: colorSeg.withOpacity(0.12),
+                                      color: colorSeg.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: colorSeg.withOpacity(0.4)),
+                                      border: Border.all(color: colorSeg.withValues(alpha: 0.4)),
                                     ),
                                     child: Text(segActual, style: TextStyle(color: colorSeg, fontWeight: FontWeight.w800, fontSize: 10)),
                                   ),
@@ -322,7 +322,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
                                 DataCell(Text(it['proximoPago'].toString(), style: const TextStyle(fontSize: 11))),
                                 DataCell(
                                   Text(
-                                    dias.toString() + ' días',
+                                    '$dias días',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 11,
@@ -364,7 +364,7 @@ class _CobranzaSeguimientoVistaState extends State<CobranzaSeguimientoVista> {
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
         child: Row(
           children: [
-            CircleAvatar(backgroundColor: color.withOpacity(0.12), child: Icon(icono, color: color, size: 18)),
+            CircleAvatar(backgroundColor: color.withValues(alpha: 0.12), child: Icon(icono, color: color, size: 18)),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

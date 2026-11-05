@@ -59,7 +59,7 @@ class _AuditoriaPortalesVistaState extends State<AuditoriaPortalesVista> with Si
     if (url.isEmpty) return;
     setState(() => _cargando = true);
     try {
-      final res = await http.get(Uri.parse(url + '?accion=OBTENER_AUDITORIA_PORTALES'));
+      final res = await http.get(Uri.parse('$url?accion=OBTENER_AUDITORIA_PORTALES'));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data is Map && data.containsKey('portales')) {
@@ -79,12 +79,12 @@ class _AuditoriaPortalesVistaState extends State<AuditoriaPortalesVista> with Si
         final itemsHtml = _checklistDocs.map((d) {
           final String docNom = d['doc']?.toString() ?? '';
           final bool inc = d['incluido'] == true;
-          return '<li>' + docNom + ': <strong>' + (inc ? 'INTEGRADO' : 'PENDIENTE') + '</strong></li>';
+          return '<li>$docNom: <strong>${inc ? 'INTEGRADO' : 'PENDIENTE'}</strong></li>';
         }).join('');
 
         return await Printing.convertHtml(
           format: format,
-          html: '<div><h2>ENFOQUE SEGURO</h2><p>CONTRATANTE: ' + _titularTargetCtrl.text + '</p><p>POLIZA: ' + _polizaTargetCtrl.text + '</p><ul>' + itemsHtml + '</ul></div>',
+          html: '<div><h2>ENFOQUE SEGURO</h2><p>CONTRATANTE: ${_titularTargetCtrl.text}</p><p>POLIZA: ${_polizaTargetCtrl.text}</p><ul>$itemsHtml</ul></div>',
         );
       },
     );
@@ -119,7 +119,7 @@ class _AuditoriaPortalesVistaState extends State<AuditoriaPortalesVista> with Si
               return Card(
                 child: ListTile(
                   title: Text(p['portal'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Vigentes: ' + p['vigentes'].toString() + ' | Canceladas: ' + p['canceladas'].toString()),
+                  subtitle: Text('Vigentes: ${p['vigentes']} | Canceladas: ${p['canceladas']}'),
                   trailing: Text(r'$ ' + (p['primaTotal'] as num).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                 ),
               );

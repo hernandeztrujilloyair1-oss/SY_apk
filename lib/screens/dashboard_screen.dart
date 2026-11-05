@@ -93,7 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(tenant.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
-                            Text(tenant.lema, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 10), overflow: TextOverflow.ellipsis),
+                            Text(tenant.lema, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10), overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
@@ -168,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
                             onChanged: (val) => setState(() => _terminoBusqueda = val.trim()),
                             decoration: InputDecoration(
-                              hintText: 'Buscar en ' + _titulos[_indiceSeleccionado] + '...',
+                              hintText: 'Buscar en ${_titulos[_indiceSeleccionado]}...',
                               hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
                               border: InputBorder.none,

@@ -165,7 +165,7 @@ class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _frecuencia,
+                        initialValue: _frecuencia,
                         decoration: const InputDecoration(labelText: 'Frecuencia de Pago', border: OutlineInputBorder()),
                         items: const [
                           DropdownMenuItem(value: 'ANUAL', child: Text('ANUAL (Contado 1 Pago)')),
@@ -179,7 +179,7 @@ class _CotizadorAutosVistaState extends State<CotizadorAutosVista> {
                     const SizedBox(width: 20),
                     Row(
                       children: [
-                        Switch(value: _anexarRedEnlace, activeColor: const Color(0xFFD4AF37), onChanged: (v) => setState(() => _anexarRedEnlace = v)),
+                        Switch(value: _anexarRedEnlace, activeThumbColor: const Color(0xFFD4AF37), onChanged: (v) => setState(() => _anexarRedEnlace = v)),
                         const Text('Anexar Cobertura Red Enlace A.C.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF091428))),
                       ],
                     ),

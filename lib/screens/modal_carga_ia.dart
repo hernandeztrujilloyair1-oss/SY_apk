@@ -32,9 +32,9 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
 
   String _avisoEstado = '1°';
   String _vendedor = 'SR RAUL';
-  String _claveAgente = '123456 - RAUL MARTINEZ (DIRECTO)';
-  bool _esRenovacion = false;
-  String _polizaAnterior = '';
+  final String _claveAgente = '123456 - RAUL MARTINEZ (DIRECTO)';
+  final bool _esRenovacion = false;
+  final String _polizaAnterior = '';
 
   // Checks obligatorios
   bool _chkPoliza = false;
@@ -176,7 +176,7 @@ class _ModalCargaIaState extends State<ModalCargaIa> {
                     ),
                     if (_archivoNombre != null) ...[
                       const SizedBox(height: 6),
-                      Text('Archivo: \$_archivoNombre', style: const TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                      const Text('Archivo: \$_archivoNombre', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
                     ],
                     const SizedBox(height: 14),
                     Row(

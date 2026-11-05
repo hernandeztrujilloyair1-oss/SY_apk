@@ -82,8 +82,8 @@ class EmpresaConfigService extends ChangeNotifier {
     if (nuevoLogo != null) {
       await prefs.setString('empresa_logo_base64', nuevoLogo);
     }
-    await prefs.setInt('empresa_nav_color', nuevoNavbar.value);
-    await prefs.setInt('empresa_acento_color', nuevoAcento.value);
+    await prefs.setInt('empresa_nav_color', nuevoNavbar.toARGB32());
+    await prefs.setInt('empresa_acento_color', nuevoAcento.toARGB32());
 
     notifyListeners();
   }

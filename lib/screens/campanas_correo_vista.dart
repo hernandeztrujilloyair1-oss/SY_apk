@@ -268,7 +268,7 @@ class _CampanasCorreoVistaState extends State<CampanasCorreoVista> with SingleTi
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _rubroSeleccionado,
+                        initialValue: _rubroSeleccionado,
                         decoration: const InputDecoration(labelText: 'Filtrar por Rubro', border: OutlineInputBorder(), isDense: true),
                         items: _rubros.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                         onChanged: (v) => setState(() => _rubroSeleccionado = v!),
@@ -277,7 +277,7 @@ class _CampanasCorreoVistaState extends State<CampanasCorreoVista> with SingleTi
                     const SizedBox(width: 14),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _companiaSeleccionada,
+                        initialValue: _companiaSeleccionada,
                         decoration: const InputDecoration(labelText: 'Filtrar por Compañía', border: OutlineInputBorder(), isDense: true),
                         items: _companias.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                         onChanged: (v) => setState(() => _companiaSeleccionada = v!),

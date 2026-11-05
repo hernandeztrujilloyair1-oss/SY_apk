@@ -28,7 +28,7 @@ class _PlantillasScreenState extends State<PlantillasScreen> with SingleTickerPr
   String _filtroFrecuencia = 'TODAS';
   String _filtroRubro = 'TODOS';
   DateTime _fechaEnvio = DateTime.now();
-  bool _esHtml = true;
+  final bool _esHtml = true;
   bool _enviando = false;
 
   // Índice de la plantilla seleccionada
@@ -55,8 +55,8 @@ class _PlantillasScreenState extends State<PlantillasScreen> with SingleTickerPr
     required String footerNota,
   }) {
     final conf = EmpresaConfigService();
-    final hexNavbar = '#${conf.colorNavbar.value.toRadixString(16).substring(2)}';
-    final hexAcento = '#${conf.colorAcento.value.toRadixString(16).substring(2)}';
+    final hexNavbar = '#${conf.colorNavbar.toARGB32().toRadixString(16).substring(2)}';
+    final hexAcento = '#${conf.colorAcento.toARGB32().toRadixString(16).substring(2)}';
     final logoSrc = conf.logoBase64 != null && conf.logoBase64!.isNotEmpty
         ? 'data:image/png;base64,${conf.logoBase64}'
         : conf.logoDefaultUrl;
@@ -636,7 +636,7 @@ class _PlantillasScreenState extends State<PlantillasScreen> with SingleTickerPr
         Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: valor,
+          initialValue: valor,
           decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
           items: opciones.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12)))).toList(),
           onChanged: onChanged,
