@@ -1,9 +1,8 @@
-import 'lector_ia_poliza_dialog.dart';
-import '../models/poliza_model.dart';
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../models/poliza_model.dart';
 import '../services/tenant_service.dart';
 import 'dashboard_metricas_vista.dart';
 import 'cobranza_seguimiento_vista.dart';
@@ -14,6 +13,7 @@ import 'auditoria_portales_vista.dart';
 import '../services/reporte_contratantes_vista.dart';
 import '../services/cotizador_gmm_vista.dart';
 import 'configuracion_vista.dart';
+import 'lector_ia_poliza_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,7 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'DASHBOARD GERENCIAL',
     'COBRANZA ACTIVA & SEGUIMIENTO',
     'CALENDARIO OPERATIVO',
-    'REPORTE DE CONTRATANTES',
+    'CONTRATANTES / CARTERA',
     'IMPORTADOR SIGA (IA)',
     'AUDITORÍA DE PORTALES',
     'CAMPAÑAS POR CORREO',
@@ -61,6 +61,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
     } catch (_) {}
+  }
+
+  void _abrirLectorIaDialog() async {
+    final creado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => const LectorIaPolizaDialog(),
+    );
+    if (creado == true) {
+      _cargarPolizasGlobales();
+    }
   }
 
   @override
@@ -94,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(tenant.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
-                            Text(tenant.lema, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10), overflow: TextOverflow.ellipsis),
+                            Text(tenant.lema, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 10), overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
@@ -169,7 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
                             onChanged: (val) => setState(() => _terminoBusqueda = val.trim()),
                             decoration: InputDecoration(
-                              hintText: 'Buscar en ${_titulos[_indiceSeleccionado]}...',
+                              hintText: 'Buscar en ' + _titulos[_indiceSeleccionado] + '...',
                               hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                               prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
                               border: InputBorder.none,
@@ -235,7 +245,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _construirVistaActiva() {
     switch (_indiceSeleccionado) {
       case 0:
-        return DashboardMetricasVista(polizas: _polizasCartera, onAbrirCargaIa: _abrirLectorIaDialog);
+        return DashboardMetricasVista(
+          polizas: _polizasCartera,
+          onAbrirCargaIa: _abrirLectorIaDialog,
+        );
       case 1:
         return const CobranzaSeguimientoVista();
       case 2:
@@ -253,7 +266,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 8:
         return const ConfiguracionVista();
       default:
-        return DashboardMetricasVista(polizas: _polizasCartera, onAbrirCargaIa: _abrirLectorIaDialog);
+        return DashboardMetricasVista(
+          polizas: _polizasCartera,
+          onAbrirCargaIa: _abrirLectorIaDialog,
+        );
     }
   }
 }
