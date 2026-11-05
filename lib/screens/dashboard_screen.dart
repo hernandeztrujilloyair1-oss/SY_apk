@@ -234,7 +234,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _construirVistaActiva() {
     switch (_indiceSeleccionado) {
       case 0:
-        return DashboardMetricasVista(polizas: _polizasCartera, onAbrirCargaIa: () => setState(() => _indiceSeleccionado = 4));
+        return DashboardMetricasVista(polizas: _polizasCartera, onAbrirCargaIa: _abrirLectorIaDialog);
       case 1:
         return const CobranzaSeguimientoVista();
       case 2:
@@ -252,7 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 8:
         return const ConfiguracionVista();
       default:
-        return DashboardMetricasVista(polizas: _polizasCartera, onAbrirCargaIa: () => setState(() => _indiceSeleccionado = 4));
+        return DashboardMetricasVista(polizas: _polizasCartera, onAbrirCargaIa: _abrirLectorIaDialog);
     }
   }
 }

@@ -1,142 +1,139 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
 import '../config/api_config.dart';
 
 class AuditoriaPortalesVista extends StatefulWidget {
   const AuditoriaPortalesVista({super.key});
-
   @override
   State<AuditoriaPortalesVista> createState() => _AuditoriaPortalesVistaState();
 }
 
-class _AuditoriaPortalesVistaState extends State<AuditoriaPortalesVista> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _endpointCtrl = TextEditingController(text: ApiConfig.appsScriptUrl);
-
-  bool _cargando = false;
-  List<Map<String, dynamic>> _portales = [
-    {'portal': 'QUALITAS', 'totalPolizas': 42, 'primaTotal': 485230.50, 'vigentes': 38, 'canceladas': 4, 'discrepancias': 1},
-    {'portal': 'GNP SEGUROS', 'totalPolizas': 29, 'primaTotal': 612400.00, 'vigentes': 27, 'canceladas': 2, 'discrepancias': 0},
-    {'portal': 'AXA SEGUROS', 'totalPolizas': 18, 'primaTotal': 234100.80, 'vigentes': 15, 'canceladas': 3, 'discrepancias': 2},
-    {'portal': 'MAPFRE', 'totalPolizas': 35, 'primaTotal': 410900.00, 'vigentes': 34, 'canceladas': 1, 'discrepancias': 0},
-  ];
-
-  final TextEditingController _polizaTargetCtrl = TextEditingController(text: '5157914');
-  final TextEditingController _titularTargetCtrl = TextEditingController(text: 'CRISOFORO ROBERTO PEREZ ONOFRE');
-  final TextEditingController _ciaTargetCtrl = TextEditingController(text: 'QUALITAS');
-  final TextEditingController _ramoTargetCtrl = TextEditingController(text: 'Autos / Amplia Plus');
-
-  final List<Map<String, dynamic>> _checklistDocs = [
-    {'doc': 'Carátula de Póliza Oficial Emitida', 'incluido': true},
-    {'doc': 'Aviso de Cobro o Comprobante de Pago', 'incluido': true},
-    {'doc': 'Identificación Oficial Vigente (INE / Pasaporte)', 'incluido': true},
-    {'doc': 'Constancia de Situación Fiscal (SAT)', 'incluido': true},
-    {'doc': 'Formato Identificación Art. 492 Firmado', 'incluido': true},
-    {'doc': 'Factura o Carta Factura Vehicular', 'incluido': false},
-  ];
+class _AuditoriaPortalesVistaState extends State<AuditoriaPortalesVista> {
+  final fMoneda = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
+  bool _cargando = true;
+  List<dynamic> _aseguradoras = [];
+  List<dynamic> _discrepancias = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _cargarAuditoriaCompleta();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _endpointCtrl.dispose();
-    _polizaTargetCtrl.dispose();
-    _titularTargetCtrl.dispose();
-    _ciaTargetCtrl.dispose();
-    _ramoTargetCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _consultarAuditoriaSheets() async {
-    final url = _endpointCtrl.text.trim();
-    if (url.isEmpty) return;
+  Future<void> _cargarAuditoriaCompleta() async {
     setState(() => _cargando = true);
     try {
-      final res = await http.get(Uri.parse('$url?accion=OBTENER_AUDITORIA_PORTALES'));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data is Map && data.containsKey('portales')) {
-          final listRaw = data['portales'] as List;
-          setState(() {
-            _portales = listRaw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-          });
+      final resCias = await http.get(Uri.parse('${ApiConfig.appsScriptUrl}?accion=GRAFICA_ASEGURADORAS'));
+      if (resCias.statusCode == 200) {
+        final dataCias = jsonDecode(resCias.body);
+        if (dataCias is List) _aseguradoras = dataCias;
+      }
+      final resDisc = await http.get(Uri.parse('${ApiConfig.appsScriptUrl}?accion=AUDITORIA_PORTALES'));
+      if (resDisc.statusCode == 200) {
+        final dataDisc = jsonDecode(resDisc.body);
+        if (dataDisc is Map && dataDisc['discrepancias'] != null) {
+          _discrepancias = dataDisc['discrepancias'];
         }
       }
     } catch (_) {}
     if (mounted) setState(() => _cargando = false);
   }
 
-  void _imprimirExpedienteFisico() {
-    Printing.layoutPdf(
-      onLayout: (format) async {
-        final itemsHtml = _checklistDocs.map((d) {
-          final String docNom = d['doc']?.toString() ?? '';
-          final bool inc = d['incluido'] == true;
-          return '<li>$docNom: <strong>${inc ? 'INTEGRADO' : 'PENDIENTE'}</strong></li>';
-        }).join('');
-
-        return await Printing.convertHtml(
-          format: format,
-          html: '<div><h2>ENFOQUE SEGURO</h2><p>CONTRATANTE: ${_titularTargetCtrl.text}</p><p>POLIZA: ${_polizaTargetCtrl.text}</p><ul>$itemsHtml</ul></div>',
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('Auditoría de Portales & Expedientes Físicos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF091428),
-        foregroundColor: const Color(0xFFD4AF37),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFFD4AF37),
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: 'PORTAL POR PORTAL'),
-            Tab(text: 'EXPEDIENTES FÍSICOS'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _portales.length,
-            itemBuilder: (ctx, i) {
-              final p = _portales[i];
-              return Card(
-                child: ListTile(
-                  title: Text(p['portal'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Vigentes: ${p['vigentes']} | Canceladas: ${p['canceladas']}'),
-                  trailing: Text(r'$ ' + (p['primaTotal'] as num).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF059669))),
-                ),
-              );
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Center(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF091428), foregroundColor: const Color(0xFFD4AF37)),
-                icon: const Icon(Icons.print_outlined),
-                label: const Text('IMPRIMIR CARÁTULA Y PESTAÑAS FÍSICAS'),
-                onPressed: _imprimirExpedienteFisico,
-              ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF1F5F9),
+        appBar: const PreferredSize(
+          preferredSize: Size.fromHeight(48),
+          child: ColoredBox(
+            color: Color(0xFF091428),
+            child: TabBar(
+              labelColor: Color(0xFFD4AF37),
+              unselectedLabelColor: Color(0xFF94A3B8),
+              indicatorColor: Color(0xFFD4AF37),
+              indicatorWeight: 3,
+              tabs: [
+                Tab(text: 'PORTAL POR PORTAL (TODAS LAS COMPAÑÍAS)'),
+                Tab(text: 'AUDITORÍA DE CAPTURA & DISCREPANCIAS'),
+              ],
             ),
           ),
-        ],
+        ),
+        body: _cargando
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF091428)))
+            : TabBarView(
+                children: [
+                  ListView.builder(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: _aseguradoras.length,
+                    itemBuilder: (context, i) {
+                      final cia = _aseguradoras[i];
+                      final nombre = (cia['aseguradora'] ?? 'OTRAS').toString();
+                      final vigentes = cia['vigentes'] ?? 0;
+                      final canceladas = cia['canceladas'] ?? 0;
+                      final prima = double.tryParse((cia['primaTotal'] ?? '0').toString()) ?? 0.0;
+                      return Card(
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: Color(0xFFCBD5E1))),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          decoration: BoxDecoration(color: const Color(0xFF091428), borderRadius: BorderRadius.circular(10)),
+                          child: Row(
+                            children: [
+                              CircleAvatar(backgroundColor: const Color(0xFFD4AF37), radius: 18, child: Text(nombre.isNotEmpty ? nombre[0] : 'C', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF091428)))),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                    const SizedBox(height: 4),
+                                    Text('Vigentes: $vigentes | Canceladas: $canceladas | Total: ${vigentes + canceladas}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(fMoneda.format(prima), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
+                                  const SizedBox(height: 2),
+                                  const Text('Prima Acumulada', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  ListView.builder(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: _discrepancias.length,
+                    itemBuilder: (context, i) {
+                      final d = _discrepancias[i];
+                      return Card(
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Color(0xFFFECACA))),
+                        child: ListTile(
+                          leading: const Icon(Icons.error_outline, color: Colors.red),
+                          title: Text('Póliza: ${d['poliza']} - ${d['contratante']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF091428))),
+                          subtitle: Text(d['descripcion'].toString(), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          trailing: Chip(
+                            label: Text(d['gravedad'].toString(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                            backgroundColor: d['gravedad'] == 'CRÍTICA' ? Colors.red : Colors.orange,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
       ),
     );
   }

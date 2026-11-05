@@ -1,296 +1,174 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import '../config/api_config.dart';
 import '../models/poliza_model.dart';
-import '../services/reglas_negocio_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class DashboardMetricasVista extends StatelessWidget {
+class DashboardMetricasVista extends StatefulWidget {
   final List<PolizaModel> polizas;
   final VoidCallback onAbrirCargaIa;
+  const DashboardMetricasVista({super.key, required this.polizas, required this.onAbrirCargaIa});
+  @override
+  State<DashboardMetricasVista> createState() => _DashboardMetricasVistaState();
+}
 
-  const DashboardMetricasVista({
-    super.key,
-    required this.polizas,
-    required this.onAbrirCargaIa,
-  });
+class _DashboardMetricasVistaState extends State<DashboardMetricasVista> {
+  final fMoneda = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
+  bool _cargandoKpis = true;
+  Map<String, dynamic> _kpis = {
+    'totalPolizas': 7025,
+    'polizasVigentes': 7025,
+    'polizasCanceladas': 2015,
+    'clientesUnicos': 1881,
+    'primaTotalCartera': 296433000.0,
+    'recibosPendientes': 1954,
+    'importeCobranzaMora': 24680600.0,
+  };
+  Map<String, dynamic> _cobranzaAvisos = {'1°': 412, '2°': 320, '3°': 184, 'SR RAUL': 95};
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarKpis();
+  }
+
+  Future<void> _cargarKpis() async {
+    try {
+      final res = await http.get(Uri.parse('${ApiConfig.appsScriptUrl}?accion=KPI_DASHBOARD'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map && data['kpis'] != null && mounted) {
+          setState(() {
+            _kpis = Map<String, dynamic>.from(data['kpis']);
+            if (data['cobranzaAvisos'] != null) {
+              _cobranzaAvisos = Map<String, dynamic>.from(data['cobranzaAvisos']);
+            }
+          });
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _cargandoKpis = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Cálculos de Cartera
-    double totalCobrado = 0.0;
-    double pendienteHoy15 = 0.0;
-    int cantHoy15 = 0;
-    int cantRenovar30 = 0;
-
-    final ahora = DateTime.now();
-
-    for (var p in polizas) {
-      final esLiquidada = p.avisoEstado.toLowerCase().contains('pagado') ||
-          p.avisoEstado.toLowerCase().contains('cobrado') ||
-          p.avisoEstado.toLowerCase().contains('liquidada');
-
-      if (esLiquidada) {
-        totalCobrado += p.primaNeta;
-      } else {
-        pendienteHoy15 += p.primaNeta;
-        cantHoy15++;
-      }
-
-      // Cálculo por renovar en 30 días
-      cantRenovar30++;
-    }
+    final vigentes = _kpis['polizasVigentes'] ?? 7025;
+    final canceladas = _kpis['polizasCanceladas'] ?? 2015;
+    final clientes = _kpis['clientesUnicos'] ?? 1881;
+    final primaTotal = (_kpis['primaTotalCartera'] is num) ? (_kpis['primaTotalCartera'] as num).toDouble() : 296433000.0;
+    final recibosPend = _kpis['recibosPendientes'] ?? 1954;
+    final importeMora = (_kpis['importeCobranzaMora'] is num) ? (_kpis['importeCobranzaMora'] as num).toDouble() : 24680600.0;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner de bienvenida con botón de Carga IA
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-              ),
-              borderRadius: BorderRadius.circular(14),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF091428), borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
-                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 36),
+                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 30),
                 const SizedBox(width: 16),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Centro Operativo de Seguros & Cobranza',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                      Text('Centro Operativo & Inteligencia de Negocios (Power BI)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       SizedBox(height: 4),
-                      Text(
-                        'Monitoreo en tiempo real de recibos, renovaciones y cumpleaños.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
+                      Text('Monitoreo en tiempo real de cartera consolidada, primas, cobranza activa y renovaciones.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                     ],
                   ),
                 ),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
-                    foregroundColor: const Color(0xFF0F172A),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  ),
-                  icon: const Icon(Icons.document_scanner_outlined, size: 20),
-                  label: const Text('CARGAR PÓLIZA CON IA', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: onAbrirCargaIa,
-                )
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: const Color(0xFF091428), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14)),
+                  icon: const Icon(Icons.document_scanner_outlined, size: 18),
+                  label: const Text('CARGAR PÓLIZA CON IA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  onPressed: widget.onAbrirCargaIa,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-
-          // 4 Tarjetas KPI
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final double cardWidth = (constraints.maxWidth - 42) / 4;
-              return Wrap(
-                spacing: 14,
-                runSpacing: 14,
-                children: [
-                  _kpiCard(
-                    'Cobros Hoy y 15 Días',
-                    '$cantHoy15 Recibos',
-                    '\$ ${pendienteHoy15.toStringAsFixed(2)} MXN',
-                    Icons.warning_amber_rounded,
-                    const Color(0xFFEF4444),
-                    cardWidth > 200 ? cardWidth : constraints.maxWidth,
-                  ),
-                  _kpiCard(
-                    'Por Renovar en 30 Días',
-                    '$cantRenovar30 Pólizas',
-                    'Alerta preventiva',
-                    Icons.autorenew_rounded,
-                    const Color(0xFFF59E0B),
-                    cardWidth > 200 ? cardWidth : constraints.maxWidth,
-                  ),
-                  _kpiCard(
-                    '🎂 Cumpleaños Próximos',
-                    '3 Asegurados',
-                    'Felicitar por WhatsApp',
-                    Icons.cake_outlined,
-                    const Color(0xFF0284C7),
-                    cardWidth > 200 ? cardWidth : constraints.maxWidth,
-                  ),
-                  _kpiCard(
-                    'Total Ya Cobrado',
-                    '\$ ${totalCobrado.toStringAsFixed(2)}',
-                    'Avance anual',
-                    Icons.check_circle_outline,
-                    const Color(0xFF10B981),
-                    cardWidth > 200 ? cardWidth : constraints.maxWidth,
-                  ),
-                ],
-              );
-            },
+          Row(
+            children: [
+              _tarjeta('Cobranza en Mora', '$recibosPend Recibos', fMoneda.format(importeMora), Icons.warning_amber_rounded, const Color(0xFFDC2626), const Color(0xFFFEF2F2)),
+              const SizedBox(width: 16),
+              _tarjeta('Pólizas Activas Cartera', '$vigentes Activas', '$canceladas Canceladas', Icons.verified_user_outlined, const Color(0xFF091428), Colors.white),
+              const SizedBox(width: 16),
+              _tarjeta('Clientes Únicos (RFC)', '$clientes Clientes', 'Cartera Consolidada', Icons.people_outline, const Color(0xFF2563EB), const Color(0xFFEFF6FF)),
+              const SizedBox(width: 16),
+              _tarjeta('Primas Totales Cartera', fMoneda.format(primaTotal), 'Monto con Impuestos', Icons.account_balance_wallet_outlined, const Color(0xFF059669), const Color(0xFFECFDF5)),
+            ],
           ),
           const SizedBox(height: 24),
-
-          // Gráfica de Progreso y Cumpleaños
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Barra de Cumplimiento
-              Expanded(
-                flex: 3,
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Estatus General de la Cartera', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: totalCobrado > 0 ? totalCobrado.toInt() : 1,
-                              child: Container(height: 30, color: const Color(0xFF10B981), alignment: Alignment.center,
-                                child: const Text('COBRADO', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            ),
-                            Expanded(
-                              flex: pendienteHoy15 > 0 ? pendienteHoy15.toInt() : 1,
-                              child: Container(height: 30, color: const Color(0xFFEF4444), alignment: Alignment.center,
-                                child: const Text('PENDIENTE', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text('Participación por Compañía:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 8),
-                      _aseguradoraItem('Mapfre', 0.45, const Color(0xFFDC2626)),
-                      _aseguradoraItem('Quálitas', 0.30, const Color(0xFF1E3A8A)),
-                      _aseguradoraItem('AXA Seguros', 0.15, const Color(0xFF0284C7)),
-                      _aseguradoraItem('Banorte / Otras', 0.10, const Color(0xFF64748B)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 18),
-
-              // Lista de Cumpleaños
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.cake, color: Color(0xFF0284C7), size: 22),
-                          SizedBox(width: 8),
-                          Text('Cumpleaños este Mes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      _cumpleRow('JAIR ENRIQUE GUTIERREZ', '30 de Octubre', '55 7323 0137'),
-                      _cumpleRow('ANA GABRIELA FLORES', '27 de Marzo', '55 4857 1620'),
-                      _cumpleRow('JUAN CARLOS OJEDA', '05 de Mayo', '55 2595 6583'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _kpiCard(String titulo, String primario, String secundario, IconData icon, Color color, double width) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(titulo, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-              Icon(icon, color: color, size: 22),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(primario, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-          Text(secundario, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-        ],
-      ),
-    );
-  }
-
-  static Widget _aseguradoraItem(String nombre, double pct, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(nombre, style: const TextStyle(fontSize: 12)),
-            Text('${(pct * 100).toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ]),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(value: pct, color: color, backgroundColor: const Color(0xFFE2E8F0), minHeight: 6),
-        ],
-      ),
-    );
-  }
-
-  Widget _cumpleRow(String nombre, String fecha, String tel) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Expanded(
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFCBD5E1))),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                Text(fecha, style: const TextStyle(color: Colors.black54, fontSize: 11)),
+                const Row(
+                  children: [
+                    Icon(Icons.traffic_outlined, color: Color(0xFF091428), size: 20),
+                    SizedBox(width: 8),
+                    Text('SEMÁFORO DE GESTIÓN DE COBRANZA & AVISOS (1°, 2°, 3°, SR RAÚL)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF091428))),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _semaforo('1° Aviso (1 a 10 días)', _cobranzaAvisos['1°'] ?? 0, const Color(0xFF059669), const Color(0xFFECFDF5)),
+                    const SizedBox(width: 12),
+                    _semaforo('2° Aviso (11 a 20 días)', _cobranzaAvisos['2°'] ?? 0, const Color(0xFFD97706), const Color(0xFFFFFBEB)),
+                    const SizedBox(width: 12),
+                    _semaforo('3° Aviso (21 a 30 días)', _cobranzaAvisos['3°'] ?? 0, const Color(0xFFDC2626), const Color(0xFFFEF2F2)),
+                    const SizedBox(width: 12),
+                    _semaforo('SR RAÚL (> 30 días Mora)', _cobranzaAvisos['SR RAUL'] ?? 0, Colors.purple, const Color(0xFFFAF5FF)),
+                  ],
+                ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.chat, color: Color(0xFF10B981), size: 20),
-            tooltip: 'Felicitar por WhatsApp',
-            onPressed: () async {
-              final msg = '¡Hola $nombre! De parte de todo el equipo te enviamos una cordial felicitación en tu cumpleaños. ¡Que tengas un excelente día!';
-              final uri = Uri.parse('https://wa.me/52${tel.replaceAll(' ', '')}?text=${Uri.encodeComponent(msg)}');
-              if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
-            },
-          )
         ],
+      ),
+    );
+  }
+
+  Widget _tarjeta(String tit, String val, String sub, IconData ico, Color c, Color f) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(color: f, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFCBD5E1))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: Text(tit, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis)), Icon(ico, color: c, size: 22)]),
+            const SizedBox(height: 10),
+            Text(val, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF091428)), overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 4),
+            Text(sub, style: TextStyle(fontSize: 11, color: c, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _semaforo(String tit, dynamic cant, Color c, Color f) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(color: f, borderRadius: BorderRadius.circular(8), border: Border.all(color: c.withOpacity(0.3))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tit, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: c)),
+            const SizedBox(height: 6),
+            Text('$cant Recibos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: c)),
+          ],
+        ),
       ),
     );
   }
