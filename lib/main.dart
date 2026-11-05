@@ -43,13 +43,12 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
   final fMoneda = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
   int _seccionActual = 0;
   bool _cargando = true;
-
   int _filtroPeriodo = 0;
 
-  List<dynamic> _polizas = [];
-  List<dynamic> _recibos = [];
-  List<dynamic> _aseguradoras = [];
-  Map<String, Map<String, dynamic>> _contratantesMap = {};
+  List _polizas = [];
+  List _recibos = [];
+  List _aseguradoras = [];
+  Map _contratantesMap = {};
 
   final TextEditingController _searchCtrl = TextEditingController();
   String _busqueda = '';
@@ -85,7 +84,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
     {'aseguradora': 'CHUBB', 'plan': 'AMPLIA', 'deducibleDM': '5%', 'deducibleRobo': '10%', 'rcLuc': r'$3,500,000', 'gastosMedicos': r'$200,000', 'prima': 12310.0, 'sel': false},
   ];
 
-  final List> _datosRamos = [
+  final _datosRamos = [
     {'ramo': 'Gastos Médicos Mayores', 'p25': 284, 'r25': 228, 'c25': 26, 'tRet25': 80.3, 'tCanc25': 9.2, 'p26': 315, 'r26': 264, 'c26': 39, 'tRet26': 83.8, 'tCanc26': 12.4, 'perdida26': 3360844.13, 'res': 'PÉRDIDA EN PRIMA ⚠️'},
     {'ramo': 'Automóviles', 'p25': 560, 'r25': 412, 'c25': 108, 'tRet25': 73.6, 'tCanc25': 19.3, 'p26': 645, 'r26': 432, 'c26': 174, 'tRet26': 67.0, 'tCanc26': 27.0, 'perdida26': 2439323.56, 'res': 'PÉRDIDA CRÍTICA 🔴'},
     {'ramo': 'Camiones y Carga', 'p25': 24, 'r25': 18, 'c25': 4, 'tRet25': 75.0, 'tCanc25': 16.7, 'p26': 28, 'r26': 21, 'c26': 5, 'tRet26': 75.0, 'tCanc26': 17.9, 'perdida26': 374848.91, 'res': 'PÉRDIDA LEVE 🔴'},
@@ -99,7 +98,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
     {'ramo': 'Mascotas', 'p25': 6, 'r25': 5, 'c25': 1, 'tRet25': 83.3, 'tCanc25': 16.7, 'p26': 8, 'r26': 5, 'c26': 2, 'tRet26': 62.5, 'tCanc26': 25.0, 'perdida26': 10985.55, 'res': 'PÉRDIDA 🔴'},
   ];
 
-  final List> _datosMeses = [
+  final _datosMeses = [
     {'mes': 'Enero', 'p25': 98, 'r25': 74, 'c25': 18, 'ret25': '75.50%', 'fuga25': 385400.00, 'p26': 114, 'r26': 72, 'c26': 34, 'ret26': '63.20%', 'fuga26': 479870.83, 'dif': r'+$94,470.83'},
     {'mes': 'Febrero', 'p25': 86, 'r25': 65, 'c25': 14, 'ret25': '75.60%', 'fuga25': 310200.00, 'p26': 98, 'r26': 66, 'c26': 26, 'ret26': '67.30%', 'fuga26': 376600.78, 'dif': r'+$66,400.78'},
     {'mes': 'Marzo', 'p25': 104, 'r25': 79, 'c25': 19, 'ret25': '76.00%', 'fuga25': 440150.00, 'p26': 118, 'r26': 76, 'c26': 32, 'ret26': '64.40%', 'fuga26': 908461.24, 'dif': r'+$468,311.24 🔴'},
@@ -114,7 +113,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
     {'mes': 'Diciembre', 'p25': 134, 'r25': 83, 'c25': 15, 'ret25': '61.90%', 'fuga25': 448610.00, 'p26': 109, 'r26': 79, 'c26': 20, 'ret26': '72.50%', 'fuga26': 791505.88, 'dif': r'+$342,895.88 🔴'},
   ];
 
-  final List> _datosAseguradoras = [
+  final _datosAseguradoras = [
     {'cia': 'ALLIANZ', 'p25': 358, 'r25': 292, 'c25': 34, 'p26': 376, 'ren26': 284, 'vig26': 47, 'ret26': 331, 'canc26': 41, 'fuga26': 1111696.82},
     {'cia': 'CHUBB', 'p25': 242, 'r25': 162, 'c25': 58, 'p26': 264, 'ren26': 154, 'vig26': 14, 'ret26': 168, 'canc26': 94, 'fuga26': 999843.20},
     {'cia': 'GNP', 'p25': 148, 'r25': 108, 'c25': 26, 'p26': 156, 'ren26': 97, 'vig26': 9, 'ret26': 106, 'canc26': 50, 'fuga26': 1019825.27},
@@ -134,7 +133,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
     {'cia': 'OTRAS COMPAÑÍAS', 'p25': 22, 'r25': 17, 'c25': 3, 'p26': 17, 'ren26': 12, 'vig26': 4, 'ret26': 16, 'canc26': 1, 'fuga26': 195679.56},
   ];
 
-  final List> _padronCanceladas = [
+  final _padronCanceladas = [
     {'fecha': '2026-04-15', 'cia': 'AXA SEGUROS', 'pol': 'S8093232', 'cont': 'Ana Elisa Vazquez Rubi', 'ramo': 'Gastos Médicos Mayores', 'prima': 369866.38},
     {'fecha': '2026-11-07', 'cia': 'AXA SEGUROS', 'pol': '16785214', 'cont': 'Francisco Ruiz Carrillo', 'ramo': 'Gastos Médicos Mayores', 'prima': 280101.44},
     {'fecha': '2026-11-07', 'cia': 'AXA SEGUROS', 'pol': '16785213', 'cont': 'Francisco Ruiz Carrillo', 'ramo': 'Gastos Médicos Mayores', 'prima': 273634.65},
@@ -193,7 +192,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
   }
 
   void _agruparContratantes() {
-    final Map<String, Map<String, dynamic>> map = {};
+    final Map map = {};
     for (var p in _polizas) {
       final nom = (p['Contratante'] ?? p['contratante'] ?? 'CLIENTE GENERAL').toString().trim();
       if (nom.isEmpty || nom.toLowerCase() == 'contratante') continue;
@@ -204,13 +203,13 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
           'rfc': (p['RFC'] ?? p['rfc'] ?? '').toString().trim(),
           'telefono': (p['Telefono_WhatsApp'] ?? p['WhatsApp'] ?? p['telefono'] ?? '').toString().trim(),
           'correo': (p['Correo'] ?? p['correo'] ?? '').toString().trim(),
-          'polizas': >[],
+          'polizas': [],
           'totalPrima': 0.0,
         };
       }
       final prima = double.tryParse((p['Prima_Total'] ?? p['primaTotal'] ?? '0').toString().replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0.0;
-      map[nom]!['totalPrima'] = (map[nom]!['totalPrima'] as double) + prima;
-      (map[nom]!['polizas'] as List>).add(Map<String, dynamic>.from(p));
+      map[nom]['totalPrima'] = (map[nom]['totalPrima'] as double) + prima;
+      (map[nom]['polizas'] as List).add(Map.from(p));
     }
     _contratantesMap = map;
   }
@@ -233,14 +232,14 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
       final data = jsonDecode(res.body);
       if (data['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Póliza $numPoliza actualizada con éxito.'), backgroundColor: const Color(0xFF059669)),
+          const SnackBar(content: Text('Póliza actualizada con éxito.'), backgroundColor: Color(0xFF059669)),
         );
         _cargarTodo();
       }
     } catch (_) {}
   }
 
-  Map<String, double> _calcularPagos(dynamic primaRaw, String frec, bool tieneRed) {
+  Map _calcularPagos(dynamic primaRaw, String frec, bool tieneRed) {
     double prima = (primaRaw is num) ? primaRaw.toDouble() : (double.tryParse(primaRaw.toString()) ?? 0.0);
     double base = prima + (tieneRed ? 1450.0 : 0.0);
     double recargo = frec == 'SEMESTRAL' ? 0.045 : (frec == 'TRIMESTRAL' ? 0.065 : (frec == 'MENSUAL' ? 0.085 : 0.0));
@@ -799,8 +798,8 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
     );
   }
 
-  void _abrirExpedienteModal(Map<String, dynamic> c) {
-    final polizas = c['polizas'] as List>;
+  void _abrirExpedienteModal(Map c) {
+    final polizas = c['polizas'] as List;
     final nombreCliente = c['nombre'].toString();
 
     showDialog(
@@ -839,7 +838,7 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
                   padding: const EdgeInsets.all(18),
                   itemCount: polizas.length,
                   itemBuilder: (context, i) {
-                    final p = polizas[i];
+                    final p = polizas[i] as Map;
                     final numPol = (p['No_Poliza'] ?? p['poliza'] ?? '').toString();
                     final cia = (p['Aseguradora'] ?? p['compania'] ?? 'QUALITAS').toString();
                     final ramo = (p['Subramo'] ?? p['ramo'] ?? 'Seguro').toString();
