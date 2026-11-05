@@ -813,8 +813,16 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           final vigentes = todasPolizas.where((p) {
-            final est = (p['Estatus'] ?? p['Estatus_Poliza'] ?? '').toString().toLowerCase();
-            return est.contains('vigente') && !est.contains('no renovada');
+            final est = (p['Estatus'] ?? p['Estatus póliza'] ?? p['Estatus_Poliza'] ?? p['estatus'] ?? '').toString().trim().toLowerCase();
+            final fFin = (p['Fin_Vigencia'] ?? p['Fin de vigencia'] ?? p['vigenciaFin'] ?? '').toString().trim();
+            final esCancel = est.contains('cancel') || est.contains('no renovada');
+            if (esCancel) return false;
+            if (est.contains('vigente')) return true;
+            // Si la fecha de término es 2026, 2027 o posterior y no está cancelada, está viva
+            if (fFin.contains('2026') || fFin.contains('2027') || fFin.contains('2028') || fFin.contains('2031')) {
+              return true;
+            }
+            return false;
           }).toList();
 
           final pasadas = todasPolizas.where((p) {
