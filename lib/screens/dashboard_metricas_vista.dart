@@ -30,10 +30,10 @@ class _DashboardMetricasVistaState extends State<DashboardMetricasVista> {
   @override
   void initState() {
     super.initState();
-    _cargarKpis();
+    _cargarKpisEnVivo();
   }
 
-  Future<void> _cargarKpis() async {
+  Future<void> _cargarKpisEnVivo() async {
     try {
       final res = await http.get(Uri.parse('${ApiConfig.appsScriptUrl}?accion=KPI_DASHBOARD'));
       if (res.statusCode == 200) {

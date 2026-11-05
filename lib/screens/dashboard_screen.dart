@@ -1,3 +1,4 @@
+import 'lector_ia_poliza_dialog.dart';
 import '../models/poliza_model.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
