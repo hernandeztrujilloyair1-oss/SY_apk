@@ -66,6 +66,11 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
   String _frecuenciaAuto = 'MENSUAL';
   bool _anexarRedAuto = true;
   bool _generandoPdf = false;
+  // Variables de Suma Asegurada y Cotizador Pro
+  String _tipoValorAuto = 'VALOR COMERCIAL';
+  final _montoFacturaAutoCtrl = TextEditingController(text: '350000');
+  final _sumaAseguradaGmmCtrl = TextEditingController(text: '100000000');
+
 
   final _opcionesGmm = [
     {'aseguradora': 'BX+', 'plan': 'PLUS', 'gama': 'GAMA ALTA', 'deducible': 35000.0, 'coaseguro': '10%', 'tope': r'$48,000', 'urgencias': 'EXCLUIDO', 'prima': 24548.12, 'sel': true},
@@ -1059,6 +1064,80 @@ class _MasterDashboardPageState extends State<MasterDashboardPage> with TickerPr
           ),
         ),
       ],
+    );
+  }
+
+  
+  void _editarOpcionModal(Map<String, dynamic> op, bool esGmm) {
+    final planCtrl = TextEditingController(text: op['plan']?.toString() ?? '');
+    final primaCtrl = TextEditingController(text: op['prima']?.toString() ?? '10000');
+    final dedCtrl = TextEditingController(text: (esGmm ? op['deducible'] : op['deducibleDM'])?.toString() ?? '5%');
+    final coaseguroRoboCtrl = TextEditingController(text: (esGmm ? op['coaseguro'] : op['deducibleRobo'])?.toString() ?? '10%');
+    final topeRcCtrl = TextEditingController(text: (esGmm ? op['tope'] : op['rcLuc'])?.toString() ?? '$4,000,000');
+    final extraCtrl = TextEditingController(text: (esGmm ? op['urgencias'] : op['gastosMedicos'])?.toString() ?? 'Amparado');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: const Color(0xFF091428),
+              radius: 16,
+              child: Text(op['aseguradora'].toString()[0], style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(width: 10),
+            Text('Editar ${op['aseguradora']}', style: const TextStyle(color: Color(0xFF091428), fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: planCtrl, decoration: const InputDecoration(labelText: 'Plan Comercial', border: OutlineInputBorder(), isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: primaCtrl, decoration: const InputDecoration(labelText: 'Costo / Prima Neta Anual ($)', border: OutlineInputBorder(), isDense: true), keyboardType: TextInputType.number),
+                const SizedBox(height: 12),
+                TextField(controller: dedCtrl, decoration: InputDecoration(labelText: esGmm ? 'Deducible ($)' : 'Deducible Daños Materiales (%)', border: const OutlineInputBorder(), isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: coaseguroRoboCtrl, decoration: InputDecoration(labelText: esGmm ? 'Coaseguro (%)' : 'Deducible Robo Total (%)', border: const OutlineInputBorder(), isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: topeRcCtrl, decoration: InputDecoration(labelText: esGmm ? 'Tope de Coaseguro' : 'Responsabilidad Civil (L.U.C.)', border: const OutlineInputBorder(), isDense: true)),
+                const SizedBox(height: 12),
+                TextField(controller: extraCtrl, decoration: InputDecoration(labelText: esGmm ? 'Urgencias en el Extranjero' : 'Gastos Médicos / Cobertura Adicional', border: const OutlineInputBorder(), isDense: true)),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('CANCELAR', style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF091428), foregroundColor: const Color(0xFFD4AF37)),
+            onPressed: () {
+              setState(() {
+                op['plan'] = planCtrl.text.trim();
+                op['prima'] = double.tryParse(primaCtrl.text.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? op['prima'];
+                if (esGmm) {
+                  op['deducible'] = double.tryParse(dedCtrl.text.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? op['deducible'];
+                  op['coaseguro'] = coaseguroRoboCtrl.text.trim();
+                  op['tope'] = topeRcCtrl.text.trim();
+                  op['urgencias'] = extraCtrl.text.trim();
+                } else {
+                  op['deducibleDM'] = dedCtrl.text.trim();
+                  op['deducibleRobo'] = coaseguroRoboCtrl.text.trim();
+                  op['rcLuc'] = topeRcCtrl.text.trim();
+                  op['gastosMedicos'] = extraCtrl.text.trim();
+                }
+              });
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('GUARDAR CAMBIOS', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 
